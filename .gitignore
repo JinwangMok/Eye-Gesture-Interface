@@ -1,0 +1,7 @@
+cascade_xmls/
+*
+!*.*
+!*/
+*.log
+.dev/
+.DS_Store
