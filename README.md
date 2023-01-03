@@ -1,11 +1,15 @@
 # Look-Click
 
 ## Environment
-> **OS**: MacOS Ventura 13.1
-> **Compiler**: g++
-> **OpenCV**: OpenCV 4.7.0(stable, installed using homebrew)
-> **OpenCV Path**: /opt/homebrew/opt/opencv@4
-> **Camera Number**: 1 (this is important when you create `VideoCapture` instance. Please Change CAM_NUM in main.h if your camera doesn't work.)
+> ***OS***: MacOS Ventura 13.1
+>
+> ***Compiler***: g++
+>
+> ***OpenCV***: OpenCV 4.7.0(stable, installed using homebrew)
+>
+> ***OpenCV Path***: /opt/homebrew/opt/opencv@4
+>
+> ***Camera Number***: 1 (this is important when you create `VideoCapture` instance. Please Change CAM_NUM in main.h if your camera doesn't work.)
 
 To compile and execute, follow steps below ⬇️
 

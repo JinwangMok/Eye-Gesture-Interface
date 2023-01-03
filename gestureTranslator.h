@@ -7,3 +7,18 @@
 #include <iostream>
 
 #endif
+
+#ifndef __GESTURE_TRANSLATOR_H__
+#define __GESTURE_TRANSLATOR_H__
+
+/* Includes */
+
+/* Constants */
+
+/* Types */
+
+/* Global Variables */
+
+/* Fuctions */
+
+#endif

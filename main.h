@@ -22,6 +22,7 @@
 #define INIT_SEC 2
 #define CASCADE_FACE_PATH "./haarcascade_frontalface_alt2.xml"
 #define CASCADE_EYE_PATH "./haarcascade_eye.xml"
+
 // > Display Resolution
 //TODO: Required revise to getting the display resolution.
 #ifdef _WIN32

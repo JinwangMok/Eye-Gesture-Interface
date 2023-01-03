@@ -12,6 +12,7 @@ int main(int argc, char** argv){
         std::cerr << "Camera load failed!" << std::endl;
         return -1;
     }
+
     EyeTracker eyeTracker(CASCADE_FACE_PATH, CASCADE_EYE_PATH);
 
     cv::Mat cameraFrame;
@@ -22,6 +23,13 @@ int main(int argc, char** argv){
     std::cout << CURSOR << std::endl;
 
     cap >> cameraFrame;
+
+    /* TEST for eyeTracker */
+    eyeTracker.detectFace(cameraFrame);
+    cv::Rect faceROI = eyeTracker.getLastFaceROI();
+    cv::rectangle(cameraFrame, faceROI, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
+    cv::imshow("Camera", cameraFrame);
+
     // cv::circle(MAIN_WINDOW, CURSOR, 3, cv::Scalar(0, 0, 255), -1, cv::LINE_AA); // Show CURSOR
     cv::imshow("Main Window", MAIN_WINDOW);
     cv::waitKey(0);
