@@ -1,12 +1,23 @@
-#ifndef __MAIN_H__
-#define __MAIN_H__
+#ifndef __COMMON_LIB__
+#define __COMMON_LIB__
 
 /* Includes */
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
 
+#endif
+
+
+#ifndef __MAIN_H__
+#define __MAIN_H__
+
+/* Includes */
+#include "eyeTracker.h"
+#include "gestureTranslator.h"
+
 /* Constants */
+#define CAM_NUM 1 //Usually this is 0. In my case is 1.
 #define KEY_ESC 27
 #define INIT_SEC 2
 #define CASCADE_FACE_PATH "./haarcascade_frontalface_alt2.xml"

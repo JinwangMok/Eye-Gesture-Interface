@@ -3,5 +3,6 @@ cascade_xmls/
 !*.*
 !*/
 *.log
+test.cpp
 .dev/
 .DS_Store
