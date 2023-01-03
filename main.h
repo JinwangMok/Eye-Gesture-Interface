@@ -35,4 +35,5 @@ cv::Mat MAIN_WINDOW;
 /* Functions */
 cv::Point initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindow, const uint16_t FPS);
 
+
 #endif
