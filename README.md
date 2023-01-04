@@ -15,12 +15,6 @@ Author: Jinwang Mok
 >> Please Change `CAM_NUM` in main.h if your camera doesn't work.
 ---
 ## Guide
-First, the architecture of this project's header files is like...
-
-`main.h` : A header file for the entire program.
-> ⌊ `eyeTracker.h` : A header file that include class for trace both eyes' center and translate the gesture using `gestureTranslator`.
->> ⌊ `gestureTranslator.h` : A header file that include class for translating both eyes' movement to specific gesture.
-
 ### To compile and execute, follow steps below ⬇️
 
 1. Download current repository to your `$PATH`
@@ -38,7 +32,7 @@ First, the architecture of this project's header files is like...
 > Compile the project. (using g++)
 > 
 > ```shell
-> g++ main.cpp eyeTracker.cpp gestureTranslator.cpp -o main `pkg-config --libs --cflags opencv4` -std=c++11
+> g++ main.cpp eyeTracker.cpp painter.cpp -o main `pkg-config --libs --cflags opencv4` -std=c++11
 > ```
 
 3. Execute the binary.

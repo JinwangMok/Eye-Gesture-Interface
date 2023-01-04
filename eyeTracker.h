@@ -12,7 +12,11 @@
 #define __EYE_TRACKER_H__
 
 /* Includes */
-#include "gestureTranslator.h"
+#include <chrono>
+#ifndef __INCLUDE_PAINTER__
+#define __INCLUDE_PAINTER__
+#include "painter.h"
+#endif
 
 /* Constants */
 // ET: Eye Tracker
@@ -20,6 +24,15 @@
 #define ET__CASCADE_EYE_MIN_NEIGHBORS   15
 #define ET__MAX_BUFFER_LENGTH           100 // Aim to store data for 3sec.(approximately 30frame * 3 = 90 + 10(margin))
 #define ET__MAX_ERROR_COUNT             30  // Aim to handle error with 1sec margin.(approximately 1sec = 30frame)
+#define ET__GESTURE__NONE                0
+#define ET__GESTURE__LEFT_CLICK          1
+#define ET__GESTURE__RIGHT_CLICK         2
+#define ET__GESTURE__LEFT_DOUBLE_CLICK   3
+#define ET__GESTURE__POINTER_MOVE        4
+#define ET__GESTURE__POINTER_DRAG        5
+#define ET__GESTURE__SCROLL_UP           6
+#define ET__GESTURE__SCROLL_DOWN         7
+#define ET__GESTURE__START               8
 
 /* Types */
 //TODO: 안구 검출 부분 엔진 교체 필요(현재는 실험용으로 cascadeClassifier 사용)
@@ -39,7 +52,11 @@ class EyeTracker{
         std::queue<cv::Rect> rightEyeROIBuffer;
         std::queue<cv::Point> leftEyeCenterBuffer;
         std::queue<cv::Point> rightEyeCenterBuffer;
-    
+        // 아래 멤버는 제스처 인식 관련
+        uint16_t lastGesture;
+        std::queue<uint16_t> gestureBuffer;
+        std::chrono::duration<double> gestureTime; // The duration for measuring gesture recognition.
+
     protected:
         void setLastFaceROI(cv::Rect faceROI){ this->lastFaceROI = faceROI; }
         void setLastLeftEyeROI(cv::Rect leftEyeROI){ this->lastLeftEyeROI = leftEyeROI; }
@@ -65,6 +82,16 @@ class EyeTracker{
         void resetRightEyeROIBuffer(){ std::queue<cv::Rect> emptyQ; std::swap(emptyQ, this->rightEyeROIBuffer);}
         void resetRightEyeCenterBuffer(){ std::queue<cv::Point> emptyQ; std::swap(emptyQ, this->rightEyeCenterBuffer);}
 
+        void setLastGesture(uint16_t gesture){ this->lastGesture = gesture; }
+        uint16_t getLastGesture(){ return this->lastGesture; }
+
+        void pushToGestureBuffer(uint16_t gesture){ this->gestureBuffer.push(gesture); }
+        void popFromGestureBuffer(){ this->gestureBuffer.pop(); }
+        void resetGestureBuffer(){ std::queue<uint16_t> emptyQ; std::swap(emptyQ, this->gestureBuffer); }
+
+        void setGestureTime(std::chrono::duration<double> durationTime){ this->gestureTime = durationTime; }
+        std::chrono::duration<double> getGestureTime(){ return this->gestureTime; }
+
     public:
         cv::Rect getLastFaceROI(){ return this->lastFaceROI; }
         cv::Rect getLastLeftEyeROI(){ return this->lastLeftEyeROI; }
@@ -77,6 +104,7 @@ class EyeTracker{
         std::queue<cv::Point> getLeftEyeCenterBuffer() { return this->leftEyeCenterBuffer; }
         std::queue<cv::Rect> getRightEyeROIBuffer(){ return this->rightEyeROIBuffer; }
         std::queue<cv::Point> getRightEyeCenterBuffer() { return this->rightEyeCenterBuffer; }
+    
     public:
         EyeTracker(cv::String casecadeFacePath, cv::String casecadeEyePath){
             this->faceClassifier.load(casecadeFacePath);
@@ -93,7 +121,8 @@ class EyeTracker{
         };
         void detectFace(cv::Mat& cameraFrame);
         void detectEyes(cv::Mat& cameraFrame);
-        void traceAndTranslate(GestureTranslator& gestureTranslator);
+        void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter);
+        Painter traceAndTranslate(cv::Mat& cameraFrame);
 };
 
 /* Global Variables */

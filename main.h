@@ -14,6 +14,10 @@
 
 /* Includes */
 #include "eyeTracker.h"
+#ifndef __INCLUDE_PAINTER__
+#define __INCLUDE_PAINTER__
+#include "painter.h"
+#endif
 
 /* Constants */
 #define CAM_NUM     1 //Usually this is 0. In my case is 1.
@@ -45,6 +49,6 @@ cv::Mat MAIN_WINDOW;
 
 /* Functions */
 cv::Point initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindow, const uint16_t FPS);
-
+void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter);
 
 #endif
