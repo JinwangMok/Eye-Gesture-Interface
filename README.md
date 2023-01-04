@@ -16,14 +16,9 @@
 ---
 ## Guide
 First, the architecture of this project's header files is like...
-> `main.h` : A header file for the entire program.
-> |
->
+`main.h` : A header file for the entire program.
 > ⌊ `eyeTracker.h` : A header file that include class for trace both eyes' center and translate the gesture using `gestureTranslator`.
->> | 
->>
 >> ⌊ `gestureTranslator.h` : A header file that include class for translating both eyes' movement to specific gesture.
-
 
 ### To compile and execute, follow steps below ⬇️
 
