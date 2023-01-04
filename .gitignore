@@ -1,6 +1,10 @@
 ##### Custom
-test.*
-
+test.cpp
+test.out
+test
+main.out
+main
+ 
 ##### Windows
 # Windows thumbnail cache files
 Thumbs.db
