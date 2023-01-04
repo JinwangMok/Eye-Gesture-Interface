@@ -22,17 +22,26 @@ int main(int argc, char** argv){
     
     std::cout << CURSOR << std::endl;
 
-    cap >> cameraFrame;
-
+    
     /* TEST for eyeTracker */
-    eyeTracker.detectFace(cameraFrame);
-    cv::Rect faceROI = eyeTracker.getLastFaceROI();
-    cv::rectangle(cameraFrame, faceROI, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
-    cv::imshow("Camera", cameraFrame);
+    while(true){
+        cap >> cameraFrame;
+        // Till now, two steps under this line are seperated for testing.
+        eyeTracker.detectFace(cameraFrame);
+        eyeTracker.detectEyes(cameraFrame);
+        cv::Rect faceROI = eyeTracker.getLastFaceROI();
+        cv::rectangle(cameraFrame, faceROI, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
+        cv::rectangle(cameraFrame, eyeTracker.getLastLeftEyeROI(), cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
+        cv::rectangle(cameraFrame, eyeTracker.getLastRightEyeROI(), cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
+        cv::circle(cameraFrame, eyeTracker.getLastLeftEyeCenter(), 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
+        cv::circle(cameraFrame, eyeTracker.getLastRightEyeCenter(), 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
+        cv::imshow("Camera", cameraFrame);
 
-    // cv::circle(MAIN_WINDOW, CURSOR, 3, cv::Scalar(0, 0, 255), -1, cv::LINE_AA); // Show CURSOR
-    cv::imshow("Main Window", MAIN_WINDOW);
-    cv::waitKey(0);
+        // cv::circle(MAIN_WINDOW, CURSOR, 3, cv::Scalar(0, 0, 255), -1, cv::LINE_AA); // Show CURSOR
+        cv::imshow("Main Window", MAIN_WINDOW);
+        if(cv::waitKey(10)==27){ break; }
+    }
+    
     cv::destroyAllWindows();
 }
 
