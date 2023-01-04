@@ -78,6 +78,10 @@ void EyeTracker::detectEyes(cv::Mat& cameraFrame){
     }else if(leftEyeLikes.empty()){
         // None leftEye has detected.(Probably this mainly meaning of blink.)
         std::cout << "Left Eye missing" << std::endl;
+        leftEyeROI = cv::Rect(
+            cv::Point(this->getLastLeftEyeROI().tl() - this->getLastFaceROI().tl()),
+            cv::Size(this->getLastLeftEyeROI().width, this->getLastLeftEyeROI().height)
+        );
     }else{
         // Multiple leftEye-like areas have detected.
         if(leftEyeROIErrorCount < ET__MAX_ERROR_COUNT){ 
@@ -109,13 +113,17 @@ void EyeTracker::detectEyes(cv::Mat& cameraFrame){
     }else if(rightEyeLikes.empty()){
         // None rightEye has detected.(Probably this mainly meaning of blink.)
         std::cout << "Right Eye missing" << std::endl;
+        rightEyeROI = cv::Rect(
+            cv::Point(this->getLastRightEyeROI().tl() - this->getLastFaceROI().tl() - cv::Point(faceROIWidth/2, 0)),
+            cv::Size(this->getLastRightEyeROI().width, this->getLastRightEyeROI().height)
+        );
     }else{
         // Multiple rightEye-like areas have detected.
         if(rightEyeROIErrorCount < ET__MAX_ERROR_COUNT){ 
             // The time yet in error margin.
             if(this->getRightEyeROIBuffer().size() > 1){
                 rightEyeROI = cv::Rect(
-                    cv::Point(this->getLastRightEyeROI().tl() - this->getLastFaceROI().tl()),
+                    cv::Point(this->getLastRightEyeROI().tl() - this->getLastFaceROI().tl() - cv::Point(faceROIWidth/2, 0)),
                     cv::Size(this->getLastRightEyeROI().width, this->getLastRightEyeROI().height)
                 );
                 rightEyeROIErrorCount++;

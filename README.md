@@ -1,5 +1,5 @@
 # Eye-Gesture-Interface
-
+Author: Jinwang Mok
 ## Environment
 >- ***OS*** : `MacOS Ventura 13.1`
 >

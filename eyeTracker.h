@@ -61,7 +61,7 @@ class EyeTracker{
 
         void resetFaceROIBuffer(){ std::queue<cv::Rect> emptyQ; std::swap(emptyQ, this->faceROIBuffer);}
         void resetLeftEyeROIBuffer(){ std::queue<cv::Rect> emptyQ; std::swap(emptyQ, this->leftEyeROIBuffer);}
-        void resetLeftEyeCenterBuffer(){ std::queue<cv::Point> emptyQ; std::swap(emptyQ, this->rightEyeCenterBuffer);}
+        void resetLeftEyeCenterBuffer(){ std::queue<cv::Point> emptyQ; std::swap(emptyQ, this->leftEyeCenterBuffer);}
         void resetRightEyeROIBuffer(){ std::queue<cv::Rect> emptyQ; std::swap(emptyQ, this->rightEyeROIBuffer);}
         void resetRightEyeCenterBuffer(){ std::queue<cv::Point> emptyQ; std::swap(emptyQ, this->rightEyeCenterBuffer);}
 
