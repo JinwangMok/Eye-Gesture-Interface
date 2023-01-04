@@ -36,7 +36,6 @@ int main(int argc, char** argv){
         cv::circle(cameraFrame, eyeTracker.getLastLeftEyeCenter(), 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
         cv::circle(cameraFrame, eyeTracker.getLastRightEyeCenter(), 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
         cv::imshow("Camera", cameraFrame);
-
         // cv::circle(MAIN_WINDOW, CURSOR, 3, cv::Scalar(0, 0, 255), -1, cv::LINE_AA); // Show CURSOR
         cv::imshow("Main Window", MAIN_WINDOW);
         if(cv::waitKey(10)==27){ break; }

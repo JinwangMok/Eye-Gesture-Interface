@@ -6,20 +6,6 @@ using namespace std;
 using namespace cv;
 
 int main(){
-    cv::VideoCapture cap(0);
-
-    if(!cap.isOpened()){
-        std::cerr << "Camera load failed!" << std::endl;
-        return -1;
-    }
-    
-    cv::Mat cameraFrame;
-
-    while(true){
-        cap >> cameraFrame;
-        flip(cameraFrame, cameraFrame, 1);
-        imshow("Frame", cameraFrame);
-
-        if(waitKey(10)==27){ break; }
-    }
+    Rect a(10, 20, 5, 5), b(20, 30, 5, 5);
+    cout << b - a << endl;
 }

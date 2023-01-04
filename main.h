@@ -1,5 +1,5 @@
-#ifndef __COMMON_LIB__
-#define __COMMON_LIB__
+#ifndef __COMMON_INCLUDE__
+#define __COMMON_INCLUDE__
 
 /* Includes */
 #include <opencv2/opencv.hpp>
@@ -14,12 +14,11 @@
 
 /* Includes */
 #include "eyeTracker.h"
-#include "gestureTranslator.h"
 
 /* Constants */
-#define CAM_NUM 1 //Usually this is 0. In my case is 1.
-#define KEY_ESC 27
-#define INIT_SEC 2
+#define CAM_NUM     1 //Usually this is 0. In my case is 1.
+#define KEY_ESC     27
+#define INIT_SEC    2
 #define CASCADE_FACE_PATH "./haarcascade_frontalface_alt2.xml"
 #define CASCADE_EYE_PATH "./haarcascade_eye.xml"
 

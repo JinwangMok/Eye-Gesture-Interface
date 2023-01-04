@@ -1,4 +1,4 @@
-# Look-Click
+# Eye-Gesture-Interface
 
 ## Environment
 >- ***OS*** : `MacOS Ventura 13.1`
@@ -9,9 +9,22 @@
 >
 >- ***OpenCV Path*** : `/opt/homebrew/opt/opencv@4`
 >
->- ***Camera Number*** : `1` (this is important when you create `VideoCapture` instance. Please Change CAM_NUM in main.h if your camera doesn't work.)
-
+>- ***Camera Number*** : `1` 
+>> This number is important when you create `VideoCapture` instance. 
+>>
+>> Please Change `CAM_NUM` in main.h if your camera doesn't work.
+---
 ## Guide
+First, the architecture of this project's header files is like...
+> `main.h` : A header file for the entire program.
+> |
+>
+> ⌊ `eyeTracker.h` : A header file that include class for trace both eyes' center and translate the gesture using `gestureTranslator`.
+>> | 
+>>
+>> ⌊ `gestureTranslator.h` : A header file that include class for translating both eyes' movement to specific gesture.
+
+
 ### To compile and execute, follow steps below ⬇️
 
 1. Download current repository to your `$PATH`
@@ -37,6 +50,6 @@
 > ```shell
 > main
 > ```
-
+---
 🚨This project is on the way. So, these steps are now in modifying.
 If something better than this guide-line, PLEASE telling me what you know🙏🏻
