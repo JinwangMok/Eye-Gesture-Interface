@@ -32,7 +32,7 @@ Author: Jinwang Mok
 > Compile the project. (using g++)
 > 
 > ```shell
-> g++ main.cpp eyeTracker.cpp painter.cpp -o main `pkg-config --libs --cflags opencv4` -std=c++11
+> g++ main.cpp eyeTracker.cpp gestureData.cpp painter.cpp -o main `pkg-config --libs --cflags opencv4` -std=c++11
 > ```
 
 3. Execute the binary.

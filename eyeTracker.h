@@ -13,9 +13,9 @@
 
 /* Includes */
 #include <chrono>
-#ifndef __INCLUDE_PAINTER__
-#define __INCLUDE_PAINTER__
-#include "painter.h"
+#ifndef __GESTURE_DATA_H__
+#define __GESTURE_DATA_H__
+#include "gestureData.h"
 #endif
 
 /* Constants */
@@ -24,18 +24,23 @@
 #define ET__CASCADE_EYE_MIN_NEIGHBORS   15
 #define ET__MAX_BUFFER_LENGTH           100 // Aim to store data for 3sec.(approximately 30frame * 3 = 90 + 10(margin))
 #define ET__MAX_ERROR_COUNT             30  // Aim to handle error with 1sec margin.(approximately 1sec = 30frame)
-#define ET__GESTURE__NONE                0
-#define ET__GESTURE__LEFT_CLICK          1
-#define ET__GESTURE__RIGHT_CLICK         2
-#define ET__GESTURE__LEFT_DOUBLE_CLICK   3
-#define ET__GESTURE__POINTER_MOVE        4
-#define ET__GESTURE__POINTER_DRAG        5
-#define ET__GESTURE__SCROLL_UP           6
-#define ET__GESTURE__SCROLL_DOWN         7
-#define ET__GESTURE__START               8
-
+#define ET__MIN_SCROLL_MARGIN           5
 /* Types */
 //TODO: 안구 검출 부분 엔진 교체 필요(현재는 실험용으로 cascadeClassifier 사용)
+enum Gesture{
+    NONE,
+    WAIT,
+    INTERFACE_ENABLE,
+    INTERFACE_DISABLE,
+    LEFT_CLICK,
+    RIGHT_CLICK,
+    DOUBLE_CLICK,
+    POINTER_MOVE,
+    DRAG,
+    DROP,
+    SCROLL_UP,
+    SCROLL_DOWN,
+};
 class EyeTracker{
     private:
         cv::CascadeClassifier faceClassifier;
@@ -53,9 +58,13 @@ class EyeTracker{
         std::queue<cv::Point> leftEyeCenterBuffer;
         std::queue<cv::Point> rightEyeCenterBuffer;
         // 아래 멤버는 제스처 인식 관련
-        uint16_t lastGesture;
-        std::queue<uint16_t> gestureBuffer;
-        std::chrono::duration<double> gestureTime; // The duration for measuring gesture recognition.
+        GestureData lastGestureData;
+        std::chrono::duration<double> frameDuration; // The duration for measuring gesture recognition in single frame.
+        std::vector<GestureData> gestureDataBuffer;
+        bool doubleClickFlag;
+        bool rightClickFlag;
+        bool dragFlag;
+        bool interfaceEnableFlag;
 
     protected:
         void setLastFaceROI(cv::Rect faceROI){ this->lastFaceROI = faceROI; }
@@ -82,15 +91,28 @@ class EyeTracker{
         void resetRightEyeROIBuffer(){ std::queue<cv::Rect> emptyQ; std::swap(emptyQ, this->rightEyeROIBuffer);}
         void resetRightEyeCenterBuffer(){ std::queue<cv::Point> emptyQ; std::swap(emptyQ, this->rightEyeCenterBuffer);}
 
-        void setLastGesture(uint16_t gesture){ this->lastGesture = gesture; }
-        uint16_t getLastGesture(){ return this->lastGesture; }
+        void setLastGestureData(GestureData gesture){ this->lastGestureData = gesture; }
+        GestureData getLastGestureData(){ return this->lastGestureData; }
 
-        void pushToGestureBuffer(uint16_t gesture){ this->gestureBuffer.push(gesture); }
-        void popFromGestureBuffer(){ this->gestureBuffer.pop(); }
-        void resetGestureBuffer(){ std::queue<uint16_t> emptyQ; std::swap(emptyQ, this->gestureBuffer); }
+        void setGestureTime(std::chrono::duration<double> _duration){ this->frameDuration = _duration; }
+        std::chrono::duration<double> getGestureTime(){ return this->frameDuration; }
 
-        void setGestureTime(std::chrono::duration<double> durationTime){ this->gestureTime = durationTime; }
-        std::chrono::duration<double> getGestureTime(){ return this->gestureTime; }
+        void pushToGestureDataBuffer(GestureData gesture){ this->gestureDataBuffer.push_back(gesture); }
+        void popFromGestureDataBuffer(){ this->gestureDataBuffer.erase(this->gestureDataBuffer.begin()); }
+        std::vector<GestureData> getGestureDataBuffer(){ return this->gestureDataBuffer; }
+        void resetGestureDataBuffer(){ std::vector<GestureData> emptyBuf; std::swap(emptyBuf, this->gestureDataBuffer); }
+
+        void setDoubleClickFlag(bool flag){ this->doubleClickFlag = flag; }
+        bool getDoubleClickFlag(){ return this->doubleClickFlag; }
+
+        void setRightClickFlag(bool flag){ this->rightClickFlag = flag; }
+        bool getRightClickFlag(){ return this->rightClickFlag; }
+
+        void setDragFlag(bool flag){ this->dragFlag = flag; }
+        bool getDragFlag(){ return this->dragFlag; }
+
+        void setInterfaceEnableFlag(bool flag){ this->interfaceEnableFlag = flag; }
+        bool getInterfaceEnableFlag(){ return this->interfaceEnableFlag; }
 
     public:
         cv::Rect getLastFaceROI(){ return this->lastFaceROI; }
@@ -118,13 +140,17 @@ class EyeTracker{
                 return;
             }
             std::cout << "Cascade Classifiers are successfully loaded!" << std::endl;
+            this->frameDuration = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
+            this->doubleClickFlag = false;
+            this->rightClickFlag = false;
+            this->dragFlag = false;
+            this->interfaceEnableFlag = false;
         };
         void detectFace(cv::Mat& cameraFrame);
         void detectEyes(cv::Mat& cameraFrame);
         void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter);
-        Painter traceAndTranslate(cv::Mat& cameraFrame);
+        Gesture traceAndTranslate2Gesture(cv::Mat& cameraFrame);
 };
-
 /* Global Variables */
 
 /* Fuctions */

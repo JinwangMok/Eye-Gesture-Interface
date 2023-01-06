@@ -18,6 +18,10 @@
 #define __INCLUDE_PAINTER__
 #include "painter.h"
 #endif
+#ifndef __GESTURE_DATA_H__
+#define __GESTURE_DATA_H__
+#include "_gesture.h"
+#endif
 
 /* Constants */
 #define CAM_NUM     1 //Usually this is 0. In my case is 1.
@@ -40,6 +44,7 @@
 #define DISPLAY_W 1920
 #define DISPLAY_H 1080
 #endif
+
 /* Types */
 
 /* Global Variables */
