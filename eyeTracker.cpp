@@ -19,10 +19,57 @@ void EyeTracker::detectFace(cv::Mat& cameraFrame){
     if(faceLikes.size()==1){ 
         // Just one face has detected.
         faceROI = faceLikes.at(0);
-        if(this->getFaceROIBuffer().size() > ET__MAX_BUFFER_LENGTH){
-            this->popFromFaceROIBuffer();
+
+        // Check face ROI is valid area.
+        if(this->getFaceROIBuffer().empty()){
+            this->pushToFaceROIBuffer(faceROI);
+        }else{
+            if(this->getFaceROIBuffer().size() >= ET__MAX_BUFFER_LENGTH){
+                this->popFromFaceROIBuffer();
+            }
+
+            if( abs(this->getLastFaceROI().x - faceROI.x) > ET__CASCADE_FACE_MARGIN_PIXEL || 
+                abs(this->getLastFaceROI().y - faceROI.y) > ET__CASCADE_FACE_MARGIN_PIXEL ){
+                    // Replace Argorithm
+                    std::vector<cv::Rect> faceROIAreas;
+                    std::vector<int> faceROICounts;
+                    int faceLikesNum = 0;
+
+                    for(cv::Rect faceROIFromBuffer : this->getFaceROIBuffer()){
+                        if(faceROIAreas.empty()){
+                            faceROIAreas.push_back(faceROIFromBuffer);
+                            faceROICounts.push_back(1);
+                            faceLikesNum++;
+                        }else{
+                            int cnt = 0;
+                            for(cv::Rect faceROIArea : faceROIAreas){
+                                if( abs(faceROIArea.x - faceROIFromBuffer.x) > ET__CASCADE_FACE_MARGIN_PIXEL ||
+                                    abs(faceROIArea.y - faceROIFromBuffer.y) > ET__CASCADE_FACE_MARGIN_PIXEL){
+
+                                    faceROIAreas.push_back(faceROIFromBuffer);
+                                    faceROICounts.push_back(1);
+                                    faceLikesNum++;
+                                }else{
+                                    faceROIAreas.at(cnt) = faceROIFromBuffer; // Update for restore last position of faceROI. 
+                                    faceROICounts.at(cnt)++;
+                                }
+                                cnt++;
+                            }
+                        }
+                    }
+
+                    int maxNum = 0;
+                    for(int i = 0; i < faceROIAreas.size(); i++){
+                        if(faceROICounts.at(i) > maxNum){
+                            maxNum = faceROICounts.at(i);
+                            faceROI = faceROIAreas.at(i);
+                        }
+                    }
+            }
+
+            this->pushToFaceROIBuffer(faceROI);
         }
-        this->pushToFaceROIBuffer(faceROI);
+
     }else{ 
         // Multiple face-like areas have detected.
         if(faceROIErrorCount < ET__MAX_ERROR_COUNT){ 
@@ -48,7 +95,10 @@ void EyeTracker::detectFace(cv::Mat& cameraFrame){
 // [ NOTICE ]
 // Left and Right Eye ROI Rect is independent from faceROI. 
 // They have to add faceROI.tl() and faceROI.width/2(especially RightEyeROI) when they used.
-void EyeTracker::detectEyes(cv::Mat& cameraFrame){
+void EyeTracker::detectEyesUsingHaar(cv::Mat& cameraFrame){
+    // Add
+    this->detectFace(cameraFrame);
+    
     /* Local Variables */
     uint16_t leftEyeROIErrorCount = 0;
     uint16_t rightEyeROIErrorCount = 0;
@@ -69,7 +119,6 @@ void EyeTracker::detectEyes(cv::Mat& cameraFrame){
     this->eyeClassifier.detectMultiScale(cameraFrame(rightEyeArea), rightEyeLikes, 1.1, ET__CASCADE_EYE_MIN_NEIGHBORS);
 
     // 3. Select most eye-like area to each eye.
-    //// TODO: 논문 내용(그레이디언트)으로 변경.
     //// (1)Left
     if(leftEyeLikes.size()==1){
         // Just one leftEye has detected.
@@ -167,8 +216,30 @@ void EyeTracker::adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Re
     );
 }
 
-/* MAIN ALGORITM */
+/* Detect Eyes Using EyePicker Algorithm. */
+void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
+    detectionData output;
+    cv::Rect faceROI;
+    cv::Mat grayFrame;
+
+    this->detectFace(cameraFrame);
+    faceROI = this->getLastFaceROI();
+    cv::cvtColor(cameraFrame, grayFrame, cv::COLOR_BGR2GRAY);
+    this->selectEyeArea(grayFrame, faceROI, output);
+    
+    // Restore adjusted data.
+    this->setLastLeftEyeROI(cv::Rect(cv::Point(output.leftEyeRegion.tl() + faceROI.tl()), cv::Size(output.leftEyeRegion.size())));
+    this->setLastRightEyeROI(cv::Rect(cv::Point(output.rightEyeRegion.tl() + faceROI.tl()), cv::Size(output.rightEyeRegion.size())));
+    this->setLastLeftEyeCenter(faceROI.tl() + output.leftEyePosition);
+    this->setLastRightEyeCenter(faceROI.tl() + output.rightEyePosition);
+}
+
+/* MAIN ALGORITHM */
 // TODO: 인터페이스 토글에 따라 활성 비활성 동작 추가해야함!!
+// TODO: 인식률을 위해 버퍼 내의 값들에 대한 오류 마진을 두는 방향으로 수정해야함!!
+// TODO: 커서 이동 표현
+// TODO: 우클릭 안됨 수정
+// TODO: (내일 01.10 할 일) : 시작 할 때 버퍼가 비어있는 것 같음! 이제 아이피커는 상관없으니까 다시 아이트래커 위주로 기능 구현하는거로 하고, 오류 발생 처리를 위해 몇개의 평균 값을 사용하는 방향이나 시작시 버퍼 초기화 등 디버깅에 집중 -> 이후 커서 이동 표현 및 사용성과 실용성 -> 이후 실험 -> 이후 아크페이스 도입?
 Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     /* Variables */
     cv::Rect faceROI, leftEyeROI, rightEyeROI;
@@ -190,8 +261,8 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     start = std::chrono::system_clock::now();
 
     // 1. Detect face and eyes. (per single frame)
-    this->detectFace(cameraFrame);
-    this->detectEyes(cameraFrame);
+    // this->detectEyesUsingHaar(cameraFrame);
+    this->detectEyesUsingEyePicker(cameraFrame);
 
     // 2. Adjusting both eyes' information.
     faceROI = this->getLastFaceROI();
@@ -199,23 +270,14 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     rightEyeROI = this->getLastRightEyeROI();
     leftEyeCenter = this->getLastLeftEyeCenter();
     rightEyeCenter = this->getLastRightEyeCenter();
-    this->adjustEyes2Face(faceROI, leftEyeROI, rightEyeROI, leftEyeCenter, rightEyeCenter);
-    
-    detectionTime = std::chrono::system_clock::now() - start;
+    // this->adjustEyes2Face(faceROI, leftEyeROI, rightEyeROI, leftEyeCenter, rightEyeCenter); // Use only with detectEyesUsingHaar()
+
     // 3. Translate to Gesture. 
-    //// 1) Get total gesture time. -> 일단 필요 없어 보임
-    totalTime = this->getGestureTime();
-    totalTimeMS = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-
-    //// 2) Check eyes are opened.
+    //// 1) Check eyes are opened.
     if(leftEyeROI.empty()){ isLeftEyeOpen = false; }
-    if(rightEyeROI.empty()){ isRightEyeOpen = false; }
+    if(rightEyeROI.empty()){ isRightEyeOpen = false; }  
 
-    //// 3) Restore this frame's gesture data.
-    thisGestureData = GestureData(detectionTime, leftEyeCenter, rightEyeCenter, isLeftEyeOpen, isRightEyeOpen);
-
-    //// 4) Translate to gesture.
-    // 📌 아래에서 플래그는 멤버로 만들자!!
+    //// 2) Translate to gesture.
     lastGestureData = this->getLastGestureData();
     if(isLeftEyeOpen && isRightEyeOpen){
         if(lastGestureData.getIsLeftEyeOpen() && lastGestureData.getIsLeftEyeOpen()){
@@ -298,12 +360,12 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                     break;
                 }
             }
-            
+            std::cout << "안구 깜빡임에 걸린 누적 시간 : " << accumulatedTime.count() << "초" << std::endl;
             if(accumulatedTime.count() <= 0){
                 // exception. 일단 써놓음
                 result =  Gesture(NONE);
-            }else if(accumulatedTime.count() >= 0.6){
-                // 0.6초 이상 3초 미만
+            }else if(accumulatedTime.count() >= 0.3){
+                // 0.6초 이상 3초 미만 -> !!수정 0.3초 이상. 0.2도 괜찮을듯
                 if(accumulatedTime.count() < 3){
                     if(this->getDoubleClickFlag()){
                         result = Gesture(DOUBLE_CLICK);
@@ -371,7 +433,7 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                     }
                  }else{
                     // 우클릭 플래그 없는 경우
-                    if(accumulatedTime.count() < 1){
+                    if(accumulatedTime.count() < 0.3){
                         // 누적 시간 1초 미만 -> 단순 대기
                         result = Gesture(WAIT);
                     }else{
@@ -410,8 +472,13 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     // End Point Of Duration(sec).
     durationTime = std::chrono::system_clock::now() - start;
 
+    thisGestureData = GestureData(durationTime, leftEyeCenter, rightEyeCenter, isLeftEyeOpen, isRightEyeOpen);
+    
+    // <will be deleted>
     // Accumulate total time.
-    this->setGestureTime(totalTime + durationTime);
+    // this->setGestureTime(totalTime + durationTime);
+    // </will be deleted>
+
     // Update gesture data and its buffer.
     //// 제스처 버퍼 사이즈가 최대 이상이면 pop 하는 연산 필요
     if(this->getGestureDataBuffer().size() >= ET__MAX_BUFFER_LENGTH){

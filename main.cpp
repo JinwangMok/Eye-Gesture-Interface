@@ -14,7 +14,7 @@ int main(int argc, char** argv){
     }
 
     EyeTracker eyeTracker(CASCADE_FACE_PATH, CASCADE_EYE_PATH);
-
+    Gesture result;
     cv::Mat cameraFrame;
     const uint16_t fps = cap.get(cv::CAP_PROP_FPS);
 
@@ -25,19 +25,59 @@ int main(int argc, char** argv){
     /* TEST for eyeTracker */
     cv::Rect faceROI, leftEyeROI, rightEyeROI;
     cv::Point leftEyeCenter, rightEyeCenter;
+    cv::String command;
     while(true){
         cap >> cameraFrame;
-        // Till now, two steps under this line are seperated for testing.
-        eyeTracker.detectFace(cameraFrame);
-        eyeTracker.detectEyes(cameraFrame);
+
+        result = eyeTracker.traceAndTranslate2Gesture(cameraFrame);
+        if(result != Gesture(NONE) && result != Gesture(WAIT)){
+            switch(result){
+                case 2:
+                    command = "Interface enabled.";
+                    break;
+                case 3:
+                    command = "Interface disabled.";
+                    break;
+                case 4:
+                    command = "Left click";
+                    break;
+                case 5:
+                    command = "Right click";
+                    break;
+                case 6:
+                    command = "Double click";
+                    break;
+                case 7:
+                    command = "Pointer move";
+                    break;
+                case 8:
+                    command = "Drag";
+                    break;
+                case 9:
+                    command = "Drop";
+                    break;
+                case 10:
+                    command = "Scroll up";
+                    break;
+                case 11:
+                    command = "Scroll down";
+                    break;
+                default:
+                    break;
+            }
+            std::cout << "Processing time : " <<  eyeTracker.getLastGestureData().getFrameTime().count() << " sec" << std::endl << std::endl;
+        }
+        // // Till now, two steps under this line are seperated for testing.
+        // eyeTracker.detectFace(cameraFrame);
+        // eyeTracker.detectEyes(cameraFrame);
         // read values and adjust for display.
         faceROI = eyeTracker.getLastFaceROI();
         leftEyeROI = eyeTracker.getLastLeftEyeROI();
         rightEyeROI = eyeTracker.getLastRightEyeROI();
         leftEyeCenter = eyeTracker.getLastLeftEyeCenter();
         rightEyeCenter = eyeTracker.getLastRightEyeCenter();
-        adjustEyes2Face(faceROI, leftEyeROI, rightEyeROI, leftEyeCenter, rightEyeCenter);
 
+        cv::putText(cameraFrame, command, cv::Point(10, 30), 2, 1, cv::Scalar(0, 0, 255));
         cv::rectangle(cameraFrame, faceROI, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
         cv::rectangle(cameraFrame, leftEyeROI, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
         cv::rectangle(cameraFrame, rightEyeROI, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
@@ -45,7 +85,7 @@ int main(int argc, char** argv){
         cv::circle(cameraFrame, rightEyeCenter, 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
         cv::imshow("Camera", cameraFrame);
         // cv::circle(MAIN_WINDOW, CURSOR, 3, cv::Scalar(0, 0, 255), -1, cv::LINE_AA); // Show CURSOR
-        cv::imshow("Main Window", MAIN_WINDOW);
+        // cv::imshow("Main Window", MAIN_WINDOW);
         if(cv::waitKey(10)==27){ break; }
     }
     
@@ -68,22 +108,22 @@ cv::Point initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindo
 
     return cv::Point(cvRound(DISPLAY_W/2), cvRound(DISPLAY_H/2));
 }
-/* !!adjustEyes2Face will be DELETED!! */
-void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter){
-    leftEyeROI = cv::Rect(
-        cv::Point(faceROI.tl() + leftEyeROI.tl()),
-        leftEyeROI.size()
-    );
-    rightEyeROI = cv::Rect(
-        cv::Point(faceROI.tl() + rightEyeROI.tl() + cv::Point(faceROI.width/2, 0)),
-        rightEyeROI.size()
-    );
-    leftEyeCenter = cv::Point(
-        faceROI.x + leftEyeCenter.x,
-        faceROI.y + leftEyeCenter.y
-    );
-    rightEyeCenter = cv::Point(
-        faceROI.x + rightEyeCenter.x + faceROI.width/2,
-        faceROI.y + rightEyeCenter.y
-    );
-}
+// /* !!adjustEyes2Face will be DELETED!! */
+// void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter){
+//     leftEyeROI = cv::Rect(
+//         cv::Point(faceROI.tl() + leftEyeROI.tl()),
+//         leftEyeROI.size()
+//     );
+//     rightEyeROI = cv::Rect(
+//         cv::Point(faceROI.tl() + rightEyeROI.tl() + cv::Point(faceROI.width/2, 0)),
+//         rightEyeROI.size()
+//     );
+//     leftEyeCenter = cv::Point(
+//         faceROI.x + leftEyeCenter.x,
+//         faceROI.y + leftEyeCenter.y
+//     );
+//     rightEyeCenter = cv::Point(
+//         faceROI.x + rightEyeCenter.x + faceROI.width/2,
+//         faceROI.y + rightEyeCenter.y
+//     );
+// }
