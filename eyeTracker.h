@@ -24,13 +24,13 @@
 #endif
 /* Constants */
 // ET: Eye Tracker
-#define ET__CASCADE_FACE_MARGIN_PIXEL   15
+#define ET__CASCADE_FACE_MARGIN_PIXEL   200
 #define ET__CASCADE_FACE_CHECK_NUM      30
 #define ET__CASCADE_FACE_MIN_NEIGHBORS  9
 #define ET__CASCADE_EYE_MIN_NEIGHBORS   15
 #define ET__MAX_BUFFER_LENGTH           100 // Aim to store data for 3sec.(approximately 30frame * 3 = 90 + 10(margin))
 #define ET__MAX_ERROR_COUNT             30  // Aim to handle error with 1sec margin.(approximately 1sec = 30frame)
-#define ET__MIN_SCROLL_MARGIN           10
+#define ET__MIN_SCROLL_MARGIN           30
 
 /* Types */
 //TODO: 안구 검출 부분 엔진 교체 필요(현재는 실험용으로 cascadeClassifier 사용)

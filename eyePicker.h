@@ -22,6 +22,12 @@
 #define EP__K_WEIGHT_BLUR_SIZE		5
 #define EP__K_FAST_EYE_WIDTH		50
 #define EP__GRADIENT_THRESHOLD		30.0
+#define EP__KALMAN_DIFF_THRESHOLD	25
+
+#define EP__EYE_STATE_CLOSE			0
+#define EP__EYE_STATE_OPEN			1
+#define EP__EYE_STATE_LEFT_CLOSED 	2
+#define EP__EYE_STATE_RIGHT_CLOSED 	3
 
 /* Types */
 struct detectionData{
@@ -35,15 +41,7 @@ struct detectionData{
 
 	int eyeWidth;
 	int eyeHeight;
-	bool eyeState;
-	bool cherryState;
-	int cherryNum;
-	int cherryCandidate;
-	int cherryCondition;
-	int eyeStateCondition;
-	int smartStayCondition;
-	bool facestate;
-	bool FaceVerified;
+	int eyeState;
 };
 
 struct kalmanEyePositionData{
@@ -141,6 +139,9 @@ class EyePicker{
 		int skipnum = 1;
 		int nump = 0;
 		int LockEscape = 0;
+
+		double lastLeftKalmanResult = 0;
+		double lastRightKalmanResult = 0;
 		
     public:
 		EyePicker(){

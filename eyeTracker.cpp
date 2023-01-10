@@ -14,8 +14,7 @@ void EyeTracker::detectFace(cv::Mat& cameraFrame){
     // 2. Detect Face-like areas.
     this->faceClassifier.detectMultiScale(grayscale, faceLikes, 1.1, ET__CASCADE_FACE_MIN_NEIGHBORS);
 
-    // 3. Select Most Face-like area to Face. -> 논문 내용으로 변경할 예정.
-    //// TODO:프레임 간의 얼굴 영역 마진 처리
+    // 3. Select Most Face-like area to Face.
     if(faceLikes.size()==1){ 
         // Just one face has detected.
         faceROI = faceLikes.at(0);
@@ -74,12 +73,8 @@ void EyeTracker::detectFace(cv::Mat& cameraFrame){
         // Multiple face-like areas have detected.
         if(faceROIErrorCount < ET__MAX_ERROR_COUNT){ 
             // The time yet in error margin.
-            if(this->getFaceROIBuffer().size() > 1){
-                faceROI = this->getLastFaceROI();
-                faceROIErrorCount++;
-            }else{
-                faceROI = cv::Rect();
-            }
+            faceROI = this->getLastFaceROI();
+            faceROIErrorCount++;
         }else{
             // The time is out of error margin.
             this->resetFaceROIBuffer();
@@ -228,10 +223,52 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
     this->selectEyeArea(grayFrame, faceROI, output);
     
     // Restore adjusted data.
-    this->setLastLeftEyeROI(cv::Rect(cv::Point(output.leftEyeRegion.tl() + faceROI.tl()), cv::Size(output.leftEyeRegion.size())));
-    this->setLastRightEyeROI(cv::Rect(cv::Point(output.rightEyeRegion.tl() + faceROI.tl()), cv::Size(output.rightEyeRegion.size())));
-    this->setLastLeftEyeCenter(faceROI.tl() + output.leftEyePosition);
-    this->setLastRightEyeCenter(faceROI.tl() + output.rightEyePosition);
+    switch(output.eyeState){
+        case EP__EYE_STATE_OPEN:
+            this->setLastLeftEyeROI(cv::Rect(cv::Point(output.leftEyeRegion.tl() + faceROI.tl()), cv::Size(output.leftEyeRegion.size())));
+            this->setLastRightEyeROI(cv::Rect(cv::Point(output.rightEyeRegion.tl() + faceROI.tl()), cv::Size(output.rightEyeRegion.size())));
+            this->setLastLeftEyeCenter(faceROI.tl() + output.leftEyePosition);
+            this->setLastRightEyeCenter(faceROI.tl() + output.rightEyePosition);
+            break;
+
+        case EP__EYE_STATE_CLOSE:
+            this->outputData.leftEyeRegion = cv::Rect();
+            this->outputData.rightEyeRegion = cv::Rect();
+            this->outputData.leftEyePosition = cv::Point();
+            this->outputData.rightEyePosition = cv::Point();
+            this->outputData.resultleftEyePosition = cv::Point();
+            this->outputData.resultrightEyePosition = cv::Point();
+            
+            this->setLastLeftEyeROI(cv::Rect());
+            this->setLastRightEyeROI(cv::Rect());
+            this->setLastLeftEyeCenter(cv::Point());
+            this->setLastRightEyeCenter(cv::Point());
+            break;
+
+        case EP__EYE_STATE_LEFT_CLOSED:
+            this->outputData.leftEyeRegion = cv::Rect();
+            this->outputData.leftEyePosition = cv::Point();
+            this->outputData.resultleftEyePosition = cv::Point();
+
+            this->setLastLeftEyeROI(cv::Rect());
+            this->setLastRightEyeROI(cv::Rect(cv::Point(output.rightEyeRegion.tl() + faceROI.tl()), cv::Size(output.rightEyeRegion.size())));
+            this->setLastLeftEyeCenter(cv::Point());
+            this->setLastRightEyeCenter(faceROI.tl() + output.rightEyePosition);
+            break;
+
+        case EP__EYE_STATE_RIGHT_CLOSED:
+            this->outputData.rightEyeRegion = cv::Rect();
+            this->outputData.rightEyePosition = cv::Point();
+            this->outputData.resultrightEyePosition = cv::Point();
+
+            this->setLastLeftEyeROI(cv::Rect(cv::Point(output.leftEyeRegion.tl() + faceROI.tl()), cv::Size(output.leftEyeRegion.size())));
+            this->setLastRightEyeROI(cv::Rect());
+            this->setLastLeftEyeCenter(faceROI.tl() + output.leftEyePosition);
+            this->setLastRightEyeCenter(cv::Point());
+            break;
+        default:
+            break;
+    }
 }
 
 /* MAIN ALGORITHM */
@@ -239,7 +276,6 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
 // TODO: 인식률을 위해 버퍼 내의 값들에 대한 오류 마진을 두는 방향으로 수정해야함!!
 // TODO: 커서 이동 표현
 // TODO: 우클릭 안됨 수정
-// TODO: (내일 01.10 할 일) : 시작 할 때 버퍼가 비어있는 것 같음! 이제 아이피커는 상관없으니까 다시 아이트래커 위주로 기능 구현하는거로 하고, 오류 발생 처리를 위해 몇개의 평균 값을 사용하는 방향이나 시작시 버퍼 초기화 등 디버깅에 집중 -> 이후 커서 이동 표현 및 사용성과 실용성 -> 이후 실험 -> 이후 아크페이스 도입?
 Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     /* Variables */
     cv::Rect faceROI, leftEyeROI, rightEyeROI;
@@ -360,7 +396,7 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                     break;
                 }
             }
-            std::cout << "안구 깜빡임에 걸린 누적 시간 : " << accumulatedTime.count() << "초" << std::endl;
+            // std::cout << "안구 깜빡임에 걸린 누적 시간 : " << accumulatedTime.count() << "초" << std::endl;
             if(accumulatedTime.count() <= 0){
                 // exception. 일단 써놓음
                 result =  Gesture(NONE);

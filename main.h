@@ -24,7 +24,7 @@
 #endif
 
 /* Constants */
-#define CAM_NUM     1 //Usually this is 0. In my case is 1.
+#define CAM_NUM     2 //Usually this is 0. In my case is 2.
 #define KEY_ESC     27
 #define INIT_SEC    2
 #define CASCADE_FACE_PATH "./haarcascade_frontalface_alt2.xml"

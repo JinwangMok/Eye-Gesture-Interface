@@ -203,7 +203,7 @@ cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 			}
 		}
 	}
-	std::cout << "count_inner = " << count_inner << " ";
+	// std::cout << "count_inner = " << count_inner << " ";
 	int count_re = ((int)count_inner*0.4);
 	////////////////////////////////////////
 	int count_outer = 0;
@@ -269,7 +269,7 @@ cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 		}
 	}
 
-	std::cout << "count_outer = " << count_outer << " ";
+	// std::cout << "count_outer = " << count_outer << " ";
 
 	// //-- Run the algorithm!
 	cv::Mat outSum = cv::Mat::zeros(eyeROI.rows, eyeROI.cols, CV_64F);
@@ -504,7 +504,7 @@ cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 
 				totalsum_mean += kalman_result;
 				sumtoralmean_test = (double)(totalsum_mean / (num + 1));
-				std::cout << "��ü���������" << totalsum_mean << std::endl;
+				// std::cout << "��ü���������" << totalsum_mean << std::endl;
 			}
 		}
 
@@ -565,39 +565,40 @@ cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 		}
 	}
 
-	left_right_total += kalman_result;
+	// For wink
+	if (counta % 2 == 0){
+		// right
+		lastRightKalmanResult = kalman_result;
+	}else{
+		//left
+		lastLeftKalmanResult = kalman_result;
+	}
 
-	double totalth = sumtoralmean_test * 0.80;
-	double pupilth = sumtoralmean_test * 0.10;
+	left_right_total += kalman_result;
+	
+	// double totalth = sumtoralmean_test * 0.80;
+	double totalth = sumtoralmean_test * 0.875;
+	// double pupilth = sumtoralmean_test * 0.10;
 
 	mean_update_th = totalth;
-	// pupilcheck = false;
 
-	if ((counta % 2) == 0)
+	if ((counta % 2) == 0 && counta > 0)
 	{
 		if ((left_right_total > 110 && (left_right_total) >= totalth))
 		{
-			std::cout << "Open Eye" << std::endl;
-			outputData.eyeState = true;
-
+			outputData.eyeState = EP__EYE_STATE_OPEN;
 		}
-		else
-		{
-			if ((left_right_total) > pupilth)
-			{
-				std::cout << "Closed Eye" << std::endl;
-				if (outputData.smartStayCondition == 1)
-				{
-					// lectureCondition = false;
+		else{
+			// std::cout << "칼만 결과 차이 : " << abs(lastRightKalmanResult - lastLeftKalmanResult) << std::endl;
+			if(abs(lastRightKalmanResult - lastLeftKalmanResult) > EP__KALMAN_DIFF_THRESHOLD){
+				if(lastRightKalmanResult > lastLeftKalmanResult){
+					outputData.eyeState = EP__EYE_STATE_LEFT_CLOSED;
+				}else{
+					outputData.eyeState = EP__EYE_STATE_RIGHT_CLOSED;
 				}
-
-			}
-			else
-			{
-				if (outputData.smartStayCondition == 1)
-				{
-					// lectureCondition = false;
-				}
+				std::cout << "윙크~" << std::endl;
+			}else{
+				outputData.eyeState = EP__EYE_STATE_CLOSE;
 			}
 		}
 
@@ -608,8 +609,8 @@ cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 
 	}
 
-	cv::Mat out;
-	outSum.convertTo(out, CV_32F, 1.0 / maxVal);
+	// cv::Mat out;
+	// outSum.convertTo(out, CV_32F, 1.0 / maxVal);
 
 	return unscalePoint(maxP, eye);
 }
@@ -841,7 +842,8 @@ void EyePicker::Search(cv::Mat &out, int label, int y, int x, int &count, int cu
 			{
 				int *outtb2 = out.ptr<int>(y + i);
 				//if (count <= cutLine){
-				if (((i + j) % 2 != 0) && (0 <= (y + i) && (y + i) < out.rows) && (0 <= (x + j) && (x + j) < out.cols) && outtb2[x + j] == -255){
+				if (((i + j) % 2 != 0) && (0 <= (y + i) && (y + i) < out.rows) &&
+					(0 <= (x + j) && (x + j) < out.cols) && outtb2[x + j] == -255){
 					count++;
 					this->Search(out, label, y + i, x + j, count, cutLine);
 				}
