@@ -51,9 +51,10 @@
 cv::Point CURSOR;
 cv::Size DISPLAY_SIZE;
 cv::Mat MAIN_WINDOW;
+EyeTracker eyeTracker;
 
 /* Functions */
-cv::Point initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindow, const uint16_t FPS);
+void initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindow, const uint16_t FPS);
 void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter);
 
 #endif

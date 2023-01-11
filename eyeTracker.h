@@ -66,20 +66,28 @@ class EyeTracker : public EyePicker{
         cv::CascadeClassifier faceClassifier;
         cv::CascadeClassifier eyeClassifier;
         cv::Rect lastFaceROI;
+        
         // 아래 4개 변수는 논문 알고리즘으로 추후 업데이트
         cv::Rect lastLeftEyeROI;
         cv::Point lastLeftEyeCenter;
         cv::Rect lastRightEyeROI;
         cv::Point lastRightEyeCenter;
+        
         // 아래 queue 자료형은 각 정보를 저장하는 버퍼의 역할
         std::deque<cv::Rect> faceROIBuffer;
         std::deque<cv::Rect> leftEyeROIBuffer;
         std::deque<cv::Rect> rightEyeROIBuffer;
         std::deque<cv::Point> leftEyeCenterBuffer;
         std::deque<cv::Point> rightEyeCenterBuffer;
+        
         // 아래 멤버는 제스처 인식 관련
         GestureData lastGestureData;
         std::vector<GestureData> gestureDataBuffer;
+
+        cv::Point centerOfBothEyes;
+        cv::Point lastCenterOfBothEyes;
+        cv::Point* CURSOR_POINTER;
+
         bool doubleClickFlag;
         bool rightClickFlag;
         bool dragFlag;
@@ -116,6 +124,9 @@ class EyeTracker : public EyePicker{
         void popFromGestureDataBuffer(){ this->gestureDataBuffer.erase(this->gestureDataBuffer.begin()); }
         void resetGestureDataBuffer(){ std::vector<GestureData> emptyBuf; std::swap(emptyBuf, this->gestureDataBuffer); }
 
+        void setCenterOfBothEyes(cv::Point pos){ this->centerOfBothEyes = pos; }
+        void setLastCenterOfBothEyes(cv::Point pos){ this->lastCenterOfBothEyes = pos; }
+
         void setDoubleClickFlag(bool flag){ this->doubleClickFlag = flag; }
 
         void setRightClickFlag(bool flag){ this->rightClickFlag = flag; }
@@ -139,12 +150,20 @@ class EyeTracker : public EyePicker{
     
         GestureData getLastGestureData(){ return this->lastGestureData; }
         std::vector<GestureData> getGestureDataBuffer(){ return this->gestureDataBuffer; }
+
+        cv::Point getCenterOfBothEyes(){  return this->centerOfBothEyes; }
+        cv::Point getLastCenterOfBothEyes(){  return this->lastCenterOfBothEyes; }
+
         bool getDoubleClickFlag(){ return this->doubleClickFlag; }
         bool getRightClickFlag(){ return this->rightClickFlag; }
         bool getDragFlag(){ return this->dragFlag; }
         bool getInterfaceEnableFlag(){ return this->interfaceEnableFlag; }
         
+        void attachCursor(cv::Point* pCursor){ this->CURSOR_POINTER = pCursor; std::cout << "Initial CURSOR Point : " << *pCursor << std::endl; }
+        void resetFlags(){ this->setDoubleClickFlag(false); this->setDragFlag(false); this->setRightClickFlag(false); }
+
     public:
+        EyeTracker(){}
         EyeTracker(cv::String casecadeFacePath, cv::String casecadeEyePath){
             this->faceClassifier.load(casecadeFacePath);
             this->eyeClassifier.load(casecadeEyePath);
@@ -161,14 +180,13 @@ class EyeTracker : public EyePicker{
             this->rightClickFlag = false;
             this->dragFlag = false;
             this->interfaceEnableFlag = false;
-        };
+        }
         void detectFace(cv::Mat& cameraFrame);
         void detectEyesUsingHaar(cv::Mat& cameraFrame);
         void detectEyesUsingEyePicker(cv::Mat& cameraFrame);
         void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter);
         Gesture traceAndTranslate2Gesture(cv::Mat& cameraFrame);
         EYE_STATE_TYPE selectCaseFromGesture(bool isLeftEyeOpen, bool isRightEyeOpen, bool isLastLeftEyeOpen, bool isLastRightEyeOpen);
-        void resetFlags(){ this->setDoubleClickFlag(false); this->setDragFlag(false); this->setRightClickFlag(false); }
 };
 /* Global Variables */
 

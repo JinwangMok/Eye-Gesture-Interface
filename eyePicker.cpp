@@ -37,7 +37,7 @@ void EyePicker::selectEyeArea(cv::Mat frame_gray, cv::Rect face, detectionData &
 	leftPupil = detectEyeCenter(equal_faceROI, leftEyeRegion, "Left Eye", nump, outputData);
 	leftPupil.x += leftEyeRegion.x;
 	leftPupil.y += leftEyeRegion.y;
-
+	
 	rightPupil = detectEyeCenter(equal_faceROI, rightEyeRegion, "Right Eye", nump, outputData);
 	rightPupil.x += rightEyeRegion.x;
 	rightPupil.y += rightEyeRegion.y;
@@ -84,7 +84,7 @@ void EyePicker::selectEyeArea(cv::Mat frame_gray, cv::Rect face, detectionData &
 	outputData.resultrightEyePosition.y = resultRightPupil.y;
 
 	nump++;
-
+	
 	gray = debugFace.clone();
 }
 
@@ -605,7 +605,7 @@ cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 
 	// cv::Mat out;
 	// outSum.convertTo(out, CV_32F, 1.0 / maxVal);
-
+	
 	return unscalePoint(maxP, eye);
 }
 
@@ -821,6 +821,7 @@ cv::Point EyePicker::unscalePoint(cv::Point p, cv::Rect origSize)
 	float ratio = (((float)EP__K_FAST_EYE_WIDTH) / origSize.width);
 	int x = round(p.x / ratio);
 	int y = round(p.y / ratio);
+	
 	return cv::Point(x, y);
 }
 

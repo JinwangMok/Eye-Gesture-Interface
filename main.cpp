@@ -12,20 +12,18 @@ int main(int argc, char** argv){
         std::cerr << "Camera load failed!" << std::endl;
         return -1;
     }
-
-    EyeTracker eyeTracker(CASCADE_FACE_PATH, CASCADE_EYE_PATH);
+    
     Gesture result;
     cv::Mat cameraFrame;
     const uint16_t fps = cap.get(cv::CAP_PROP_FPS);
 
-    CURSOR = initialSetUp(cap, cameraFrame, MAIN_WINDOW, fps);
-    
-    std::cout << CURSOR << std::endl;
+    initialSetUp(cap, cameraFrame, MAIN_WINDOW, fps);
 
     /* TEST for eyeTracker */
     cv::Rect faceROI, leftEyeROI, rightEyeROI;
-    cv::Point leftEyeCenter, rightEyeCenter;
+    cv::Point leftEyeCenter, rightEyeCenter, bothEyeCenter;
     cv::String command;
+
     while(true){
         cap >> cameraFrame;
 
@@ -76,6 +74,7 @@ int main(int argc, char** argv){
         rightEyeROI = eyeTracker.getLastRightEyeROI();
         leftEyeCenter = eyeTracker.getLastLeftEyeCenter();
         rightEyeCenter = eyeTracker.getLastRightEyeCenter();
+        bothEyeCenter = eyeTracker.getCenterOfBothEyes();
 
         cv::putText(cameraFrame, command, cv::Point(10, 30), 2, 1, cv::Scalar(0, 0, 255));
         cv::rectangle(cameraFrame, faceROI, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
@@ -83,6 +82,7 @@ int main(int argc, char** argv){
         cv::rectangle(cameraFrame, rightEyeROI, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
         cv::circle(cameraFrame, leftEyeCenter, 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
         cv::circle(cameraFrame, rightEyeCenter, 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
+        cv::circle(cameraFrame, bothEyeCenter, 3, cv::Scalar(255, 0, 0), -1, cv::LINE_AA);
         cv::imshow("Camera", cameraFrame);
         // cv::circle(MAIN_WINDOW, CURSOR, 3, cv::Scalar(0, 0, 255), -1, cv::LINE_AA); // Show CURSOR
         // cv::imshow("Main Window", MAIN_WINDOW);
@@ -92,7 +92,7 @@ int main(int argc, char** argv){
     cv::destroyAllWindows();
 }
 
-cv::Point initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindow, const uint16_t FPS){
+void initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindow, const uint16_t FPS){
     /* VARIABLES */
     const int FRAME_NUM_FOR_INIT = FPS * INIT_SEC;
 
@@ -106,8 +106,13 @@ cv::Point initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindo
     //TODO: Update the mainWindow for experiment.
     mainWindow = cv::Mat(cv::Size(DISPLAY_W, DISPLAY_H), CV_8UC3, cv::Scalar::all(255));
 
-    return cv::Point(cvRound(DISPLAY_W/2), cvRound(DISPLAY_H/2));
+    eyeTracker = EyeTracker(CASCADE_FACE_PATH, CASCADE_EYE_PATH);
+
+    CURSOR = cv::Point(cvRound(DISPLAY_W/2), cvRound(DISPLAY_H/2));
+
+    eyeTracker.attachCursor(&CURSOR);
 }
+
 // /* !!adjustEyes2Face will be DELETED!! */
 // void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter){
 //     leftEyeROI = cv::Rect(

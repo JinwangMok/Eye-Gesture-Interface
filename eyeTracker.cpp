@@ -221,14 +221,25 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
     faceROI = this->getLastFaceROI();
     cv::cvtColor(cameraFrame, grayFrame, cv::COLOR_BGR2GRAY);
     this->selectEyeArea(grayFrame, faceROI, output);
-    
+
     // Restore adjusted data.
     switch(output.eyeState){
         case EP__EYE_STATE_OPEN:
+
             this->setLastLeftEyeROI(cv::Rect(cv::Point(output.leftEyeRegion.tl() + faceROI.tl()), cv::Size(output.leftEyeRegion.size())));
             this->setLastRightEyeROI(cv::Rect(cv::Point(output.rightEyeRegion.tl() + faceROI.tl()), cv::Size(output.rightEyeRegion.size())));
             this->setLastLeftEyeCenter(faceROI.tl() + output.leftEyePosition);
             this->setLastRightEyeCenter(faceROI.tl() + output.rightEyePosition);
+
+            this->setCenterOfBothEyes(
+                cv::Point(
+                    cvRound(faceROI.x + output.leftEyePosition.x + (output.rightEyePosition.x - output.leftEyePosition.x)/2),
+                    output.leftEyePosition.y < output.rightEyePosition.y ? 
+                        cvRound(faceROI.y + output.leftEyePosition.y + (output.rightEyePosition.y - output.leftEyePosition.y)/2)
+                        :
+                        cvRound(faceROI.y + output.leftEyePosition.y + (output.leftEyePosition.y - output.rightEyePosition.y)/2)
+                )
+            );
             break;
 
         case EP__EYE_STATE_CLOSE:
@@ -243,6 +254,8 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
             this->setLastRightEyeROI(cv::Rect());
             this->setLastLeftEyeCenter(cv::Point());
             this->setLastRightEyeCenter(cv::Point());
+
+            this->setCenterOfBothEyes(cv::Point());
             break;
 
         case EP__EYE_STATE_LEFT_CLOSED:
@@ -250,10 +263,30 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
             this->outputData.leftEyePosition = cv::Point();
             this->outputData.resultleftEyePosition = cv::Point();
 
+            if(this->getLastCenterOfBothEyes() == cv::Point()){
+                this->setCenterOfBothEyes(
+                    cv::Point(
+                        faceROI.x + output.rightEyeRegion.x,
+                        cvRound(faceROI.y + output.rightEyeRegion.y + output.rightEyeRegion.height/2)
+                    )
+                );
+            }else{
+                int xDiff = this->getLastRightEyeCenter().x - faceROI.x + output.rightEyePosition.x;
+                int yDiff = this->getLastRightEyeCenter().y - faceROI.y + output.rightEyePosition.y;
+                cv::Point lastCenter = this->getLastCenterOfBothEyes();
+                this->setCenterOfBothEyes(
+                    cv::Point(
+                        lastCenter.x + xDiff,
+                        lastCenter.y + yDiff
+                    )
+                );
+            }
+
             this->setLastLeftEyeROI(cv::Rect());
             this->setLastRightEyeROI(cv::Rect(cv::Point(output.rightEyeRegion.tl() + faceROI.tl()), cv::Size(output.rightEyeRegion.size())));
             this->setLastLeftEyeCenter(cv::Point());
             this->setLastRightEyeCenter(faceROI.tl() + output.rightEyePosition);
+            
             break;
 
         case EP__EYE_STATE_RIGHT_CLOSED:
@@ -261,10 +294,30 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
             this->outputData.rightEyePosition = cv::Point();
             this->outputData.resultrightEyePosition = cv::Point();
 
+            if(this->getLastCenterOfBothEyes() == cv::Point()){
+                this->setCenterOfBothEyes(
+                    cv::Point(
+                        faceROI.x + output.leftEyeRegion.x + output.leftEyeRegion.width,
+                        cvRound(faceROI.y + output.leftEyeRegion.y + output.leftEyeRegion.height/2)
+                    )
+                );
+            }else{
+                int xDiff = this->getLastLeftEyeCenter().x - faceROI.x + output.leftEyePosition.x;
+                int yDiff = this->getLastLeftEyeCenter().y - faceROI.y + output.leftEyePosition.y;
+                cv::Point lastCenter = this->getLastCenterOfBothEyes();
+                this->setCenterOfBothEyes(
+                    cv::Point(
+                        lastCenter.x + xDiff + output.leftEyeRegion.width,
+                        lastCenter.y + yDiff
+                    )
+                );
+            }
+            
             this->setLastLeftEyeROI(cv::Rect(cv::Point(output.leftEyeRegion.tl() + faceROI.tl()), cv::Size(output.leftEyeRegion.size())));
             this->setLastRightEyeROI(cv::Rect());
             this->setLastLeftEyeCenter(faceROI.tl() + output.leftEyePosition);
             this->setLastRightEyeCenter(cv::Point());
+            
             break;
         default:
             break;
@@ -275,7 +328,6 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
 // TODO: 인터페이스 토글에 따라 활성 비활성 동작 추가해야함!!
 // TODO: 인식률을 위해 버퍼 내의 값들에 대한 오류 마진을 두는 방향으로 수정해야함!!
 // TODO: 커서 이동 표현
-// TODO: 우클릭 안됨 수정
 Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     /* Variables */
     cv::Rect faceROI, leftEyeROI, rightEyeROI;
@@ -300,7 +352,7 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     // this->detectEyesUsingHaar(cameraFrame);
     this->detectEyesUsingEyePicker(cameraFrame);
 
-    // 2. Adjusting both eyes' information.
+    // 2. Get both eyes' information.
     faceROI = this->getLastFaceROI();
     leftEyeROI = this->getLastLeftEyeROI();
     rightEyeROI = this->getLastRightEyeROI();
@@ -476,7 +528,7 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                     }else{
                         // 우클릭이지만 아직 드래그 플래그는 없는 경우
                         // 아래의 주석된 코드 정상 작동 확인 완료
-                        
+
                         // std::cout << "우클릭 시간 0.3초 이상이라 드래그 플래그 ture된 상태임" << std::endl;
                         // result = Gesture(RIGHT_CLICK);
                         // this->resetFlags();
@@ -497,13 +549,13 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                     // 우클릭 플래그 없는 경우
                     if(accumulatedTime.count() < 0.3){
                         // 누적 시간 1초 미만 -> 단순 대기
-                        std::cout << "연속적으로 한눈만 감고 있음!!" << std::endl;
+                        // std::cout << "연속적으로 한눈만 감고 있음!!" << std::endl;
                         result = Gesture(WAIT);
                     }else{
                         // 누적 시간 1초 이상 -> 우클릭 플래그 및 대기(눈 뜰 때 적용이므로)
                         // 우클릭 검사 플래그가 없으면 1초 미만 -> 우클릭 대기 중 || 1초 이상 -> 우클릭만 누르고 드래그는 안한 경우 
                         // ⭐️ 이 부분 3초 미만 유지 내용 수정함. 논문에 표 1에 strike 그려놓음
-                        std::cout << "우클릭 준비 완료!!! 눈 떼면 우클릭 플래그 true인 상태" << std::endl;
+                        // std::cout << "우클릭 준비 완료!!! 눈 떼면 우클릭 플래그 true인 상태" << std::endl;
                         result = Gesture(WAIT);
                         this->resetFlags();
                         this->setRightClickFlag(true);
