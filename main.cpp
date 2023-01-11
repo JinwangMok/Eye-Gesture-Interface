@@ -112,23 +112,3 @@ void initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindow, co
 
     eyeTracker.attachCursor(&CURSOR);
 }
-
-// /* !!adjustEyes2Face will be DELETED!! */
-// void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter){
-//     leftEyeROI = cv::Rect(
-//         cv::Point(faceROI.tl() + leftEyeROI.tl()),
-//         leftEyeROI.size()
-//     );
-//     rightEyeROI = cv::Rect(
-//         cv::Point(faceROI.tl() + rightEyeROI.tl() + cv::Point(faceROI.width/2, 0)),
-//         rightEyeROI.size()
-//     );
-//     leftEyeCenter = cv::Point(
-//         faceROI.x + leftEyeCenter.x,
-//         faceROI.y + leftEyeCenter.y
-//     );
-//     rightEyeCenter = cv::Point(
-//         faceROI.x + rightEyeCenter.x + faceROI.width/2,
-//         faceROI.y + rightEyeCenter.y
-//     );
-// }

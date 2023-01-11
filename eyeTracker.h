@@ -31,7 +31,7 @@
 #define ET__MAX_BUFFER_LENGTH           100 // Aim to store data for 3sec.(approximately 30frame * 3 = 90 + 10(margin))
 #define ET__MAX_ERROR_COUNT             30  // Aim to handle error with 1sec margin.(approximately 1sec = 30frame)
 #define ET__MIN_SCROLL_MARGIN           20
-
+#define ET__BUFFER_ERROR_MARGIN_COUNT   4
 
 /* Types */
 //TODO: 안구 검출 부분 엔진 교체 필요(현재는 실험용으로 cascadeClassifier 사용)

@@ -370,17 +370,23 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     lastGestureData = this->getLastGestureData();
     
     EYE_STATE_TYPE CASE = selectCaseFromGesture(isLeftEyeOpen, isRightEyeOpen, lastGestureData.getIsLeftEyeOpen(), lastGestureData.getIsRightEyeOpen());
-
+    
+    uint16_t bufErrorCnt;
     switch(CASE){
 
         /* 1) 양안을 지속적으로 뜬 경우 */
         case EYE_STATE_TYPE(BOTH_OPEN_TO_BOTH_OPEN):
+            bufErrorCnt = 0;
             accumulatedTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
             for(std::vector<GestureData>::iterator it = this->getGestureDataBuffer().end()-1; it != this->getGestureDataBuffer().begin()-1; it--){
                 if(it->getIsLeftEyeOpen() && it->getIsRightEyeOpen()){
                     accumulatedTime += it->getFrameTime(); // sec
-                }else{ 
-                    break;
+                }else{
+                    if(bufErrorCnt < ET__BUFFER_ERROR_MARGIN_COUNT){
+                        bufErrorCnt++;
+                    }else{
+                        break;
+                    }
                 }
             }
 
@@ -422,12 +428,17 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
 
         /* 2) 지금은 양안을 떴지만 방금까지 한쪽 눈만 뜬 경우 */
         case EYE_STATE_TYPE(SINGLE_OPEN_TO_BOTH_OPEN):
+            bufErrorCnt = 0;
             accumulatedTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
             for(std::vector<GestureData>::iterator it = this->getGestureDataBuffer().end()-1; it != this->getGestureDataBuffer().begin()-1; it--){
                 if((lastGestureData.getIsLeftEyeOpen() == it->getIsLeftEyeOpen()) && (lastGestureData.getIsRightEyeOpen() == it->getIsRightEyeOpen())){
                     accumulatedTime += it->getFrameTime(); // sec
                 }else{ 
-                    break;
+                    if(bufErrorCnt < ET__BUFFER_ERROR_MARGIN_COUNT){
+                        bufErrorCnt++;
+                    }else{
+                        break;
+                    }
                 }
             }
             
@@ -457,12 +468,17 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
 
         /* 3) 지금은 양안을 떳지만 방금까지 두 눈 모두 감은 경우 */
         case EYE_STATE_TYPE(BOTH_CLOSE_TO_BOTH_OPEN):
+            bufErrorCnt = 0;
             accumulatedTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
             for(std::vector<GestureData>::iterator it = this->getGestureDataBuffer().end()-1; it != this->getGestureDataBuffer().begin()-1; it--){
                 if(!it->getIsLeftEyeOpen() && !it->getIsRightEyeOpen()){
                     accumulatedTime += it->getFrameTime(); // sec
                 }else{ 
-                    break;
+                    if(bufErrorCnt < ET__BUFFER_ERROR_MARGIN_COUNT){
+                        bufErrorCnt++;
+                    }else{
+                        break;
+                    }
                 }
             }
             // std::cout << "안구 깜빡임에 걸린 누적 시간 : " << accumulatedTime.count() << "초" << std::endl;
@@ -506,12 +522,17 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
 
         /* 5) 지금도 한 쪽 눈만 떳고 방금도 한쪽눈만 뜬 경우  */
         case EYE_STATE_TYPE(SINGLE_OPEN_TO_SINGLE_OPEN):
+            bufErrorCnt = 0;
             accumulatedTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
             for(std::vector<GestureData>::iterator it = this->getGestureDataBuffer().end()-1; it != this->getGestureDataBuffer().begin()-1; it--){
                 if((lastGestureData.getIsLeftEyeOpen() == it->getIsLeftEyeOpen()) && (lastGestureData.getIsRightEyeOpen() == it->getIsRightEyeOpen())){
                     accumulatedTime += it->getFrameTime(); // sec
                 }else{ 
-                    break;
+                    if(bufErrorCnt < ET__BUFFER_ERROR_MARGIN_COUNT){
+                        bufErrorCnt++;
+                    }else{
+                        break;
+                    }
                 }
             }
 
@@ -612,20 +633,7 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
 
     return result;
 }
-// duration.count()
-// this->setGestureTime(durationTime);
 
-// 두눈을 다 뜬 경우
-    // focusPoint = cv::Point(
-    //     ((rightEyeCenter.x - leftEyeCenter.x)/2 + leftEyeCenter.x),
-    //     (leftEyeCenter.y < rightEyeCenter.y ? ((leftEyeCenter.y - rightEyeCenter.y)/2 + leftEyeCenter.y) : ((rightEyeCenter.y - leftEyeCenter.y)/2 + rightEyeCenter.y))
-    // );
-// 한쪽 눈만 뜬 경우
-    // 직전 눈의 정보와 감은 쪽이 일치하는지 확인 + 일치한다면 이동 거리 계산해서 focusPoint에 반영
-// 두눈 다 감은 경우
-    // 직전 눈의 focusPoint 정보 그대로 사용
-
-// focusPoint = this->getLastGesture().getCursor();
 EYE_STATE_TYPE EyeTracker::selectCaseFromGesture(bool isLeftEyeOpen, bool isRightEyeOpen, bool isLastLeftEyeOpen, bool isLastRightEyeOpen){
     if(isLeftEyeOpen && isRightEyeOpen){
         if(isLastLeftEyeOpen && isLastRightEyeOpen){
