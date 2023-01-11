@@ -30,21 +30,6 @@
 #define CASCADE_FACE_PATH "./haarcascade_frontalface_alt2.xml"
 #define CASCADE_EYE_PATH "./haarcascade_eye.xml"
 
-// > Display Resolution
-//TODO: Required revise to getting the display resolution.
-#ifdef _WIN32
-#define DISPLAY_W 1280
-#define DISPLAY_H 720
-
-#elif __APPLE__ 
-#define DISPLAY_W 2560
-#define DISPLAY_H 1440
-
-#else
-#define DISPLAY_W 1920
-#define DISPLAY_H 1080
-#endif
-
 /* Types */
 
 /* Global Variables */

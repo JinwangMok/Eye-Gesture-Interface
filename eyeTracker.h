@@ -23,6 +23,22 @@
 #include "eyePicker.h"
 #endif
 /* Constants */
+
+// > Display Resolution
+//TODO: Required revise to getting the display resolution.
+#ifdef _WIN32
+#define DISPLAY_W 1280
+#define DISPLAY_H 720
+
+#elif __APPLE__ 
+#define DISPLAY_W 2560
+#define DISPLAY_H 1440
+
+#else
+#define DISPLAY_W 1920
+#define DISPLAY_H 1080
+#endif
+
 // ET: Eye Tracker
 #define ET__CASCADE_FACE_MARGIN_PIXEL   200
 #define ET__CASCADE_FACE_CHECK_NUM      30
@@ -32,6 +48,9 @@
 #define ET__MAX_ERROR_COUNT             30  // Aim to handle error with 1sec margin.(approximately 1sec = 30frame)
 #define ET__MIN_SCROLL_MARGIN           20
 #define ET__BUFFER_ERROR_MARGIN_COUNT   4
+#define ET__MIN_POINTER_MOVE_MARGIN     5
+#define ET__POINTER_X_MOVE_RATIO        3
+#define ET__POINTER_Y_MOVE_RATIO        7.5
 
 /* Types */
 //TODO: 안구 검출 부분 엔진 교체 필요(현재는 실험용으로 cascadeClassifier 사용)
@@ -187,6 +206,7 @@ class EyeTracker : public EyePicker{
         void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter);
         Gesture traceAndTranslate2Gesture(cv::Mat& cameraFrame);
         EYE_STATE_TYPE selectCaseFromGesture(bool isLeftEyeOpen, bool isRightEyeOpen, bool isLastLeftEyeOpen, bool isLastRightEyeOpen);
+        void moveCursor(int xDiff, int yDiff);
 };
 /* Global Variables */
 

@@ -255,7 +255,7 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
             this->setLastLeftEyeCenter(cv::Point());
             this->setLastRightEyeCenter(cv::Point());
 
-            this->setCenterOfBothEyes(cv::Point());
+            this->setCenterOfBothEyes(this->getLastCenterOfBothEyes());
             break;
 
         case EP__EYE_STATE_LEFT_CLOSED:
@@ -331,7 +331,7 @@ void EyeTracker::detectEyesUsingEyePicker(cv::Mat& cameraFrame){
 Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     /* Variables */
     cv::Rect faceROI, leftEyeROI, rightEyeROI;
-    cv::Point leftEyeCenter, rightEyeCenter;
+    cv::Point leftEyeCenter, rightEyeCenter, bothEyeCenter, lastBothEyeCenter;
 
     std::chrono::duration<double> totalTime, accumulatedTime, detectionTime, durationTime;
     std::chrono::microseconds totalTimeMS;
@@ -358,6 +358,8 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     rightEyeROI = this->getLastRightEyeROI();
     leftEyeCenter = this->getLastLeftEyeCenter();
     rightEyeCenter = this->getLastRightEyeCenter();
+    bothEyeCenter = this->getCenterOfBothEyes();
+    lastBothEyeCenter = this->getLastCenterOfBothEyes();
     // If you use detectEyesUsingHaar, than you have to run adjustEyes2Face code below.
     //// this->adjustEyes2Face(faceROI, leftEyeROI, rightEyeROI, leftEyeCenter, rightEyeCenter); // Use only with detectEyesUsingHaar()
 
@@ -420,7 +422,19 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                     result = Gesture(SCROLL_DOWN);
                 }else{
                     // 포인터 이동
-                    //// 🔧구현 예정
+                    if(lastBothEyeCenter == cv::Point()){
+                        this->setLastCenterOfBothEyes(bothEyeCenter);
+                        result = Gesture(POINTER_MOVE);
+                    }else{
+                        if( abs(lastBothEyeCenter.x - bothEyeCenter.x) > ET__MIN_POINTER_MOVE_MARGIN ||
+                            abs(lastBothEyeCenter.y - bothEyeCenter.y) > ET__MIN_POINTER_MOVE_MARGIN){
+                            this->moveCursor((lastBothEyeCenter.x - bothEyeCenter.x), (lastBothEyeCenter.y - bothEyeCenter.y));
+                            this->setLastCenterOfBothEyes(bothEyeCenter);
+                            result = Gesture(POINTER_MOVE);
+                        }else{
+                            result = Gesture(NONE);
+                        }
+                    }
                 }
             }
 
@@ -517,7 +531,7 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
         /* 4) 지금은 한 쪽 눈만 떴지만 방금까지 두 눈을 뜬 경우 */
         case EYE_STATE_TYPE(BOTH_OPEN_TO_SINGLE_OPEN):
             result = Gesture(WAIT);
-            
+
             break;
 
         /* 5) 지금도 한 쪽 눈만 떳고 방금도 한쪽눈만 뜬 경우  */
@@ -537,7 +551,7 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
             }
 
             if(accumulatedTime.count() <= 0){
-                // exception. 일단 써놓음
+                // exception
                 result =  Gesture(NONE);
             }else{
                  if(this->getRightClickFlag()){
@@ -660,4 +674,20 @@ EYE_STATE_TYPE EyeTracker::selectCaseFromGesture(bool isLeftEyeOpen, bool isRigh
             return EYE_STATE_TYPE(BOTH_CLOSE_TO_BOTH_CLOSE);
         }
     }
+}
+
+void EyeTracker::moveCursor(int xDiff, int yDiff){
+    int newX, newY;
+    std::cout << "xDiff : " << xDiff << " , yDiff : " << yDiff << std::endl;
+    newX = this->CURSOR_POINTER->x - xDiff * ET__POINTER_X_MOVE_RATIO;
+    newX = newX > DISPLAY_W ? DISPLAY_W : newX;
+    newX = newX < 0 ? 0 : newX;
+    this->CURSOR_POINTER->x = newX;
+
+    newY = this->CURSOR_POINTER->y - yDiff * ET__POINTER_Y_MOVE_RATIO;
+    newY = newY > DISPLAY_H ? DISPLAY_H : newY;
+    newY = newY < 0 ? 0 : newY;
+    this->CURSOR_POINTER->y = newY;
+
+    std::cout << "포인터 x : " << newX << " , y : " << newY << std::endl << std::endl;
 }

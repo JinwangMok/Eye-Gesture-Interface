@@ -83,6 +83,7 @@ int main(int argc, char** argv){
         cv::circle(cameraFrame, leftEyeCenter, 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
         cv::circle(cameraFrame, rightEyeCenter, 5, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
         cv::circle(cameraFrame, bothEyeCenter, 3, cv::Scalar(255, 0, 0), -1, cv::LINE_AA);
+        cv::circle(cameraFrame, CURSOR, 10, cv::Scalar(0, 0, 255), -1, cv::LINE_AA);
         cv::imshow("Camera", cameraFrame);
         // cv::circle(MAIN_WINDOW, CURSOR, 3, cv::Scalar(0, 0, 255), -1, cv::LINE_AA); // Show CURSOR
         // cv::imshow("Main Window", MAIN_WINDOW);
