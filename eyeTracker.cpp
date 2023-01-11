@@ -306,7 +306,8 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     rightEyeROI = this->getLastRightEyeROI();
     leftEyeCenter = this->getLastLeftEyeCenter();
     rightEyeCenter = this->getLastRightEyeCenter();
-    // this->adjustEyes2Face(faceROI, leftEyeROI, rightEyeROI, leftEyeCenter, rightEyeCenter); // Use only with detectEyesUsingHaar()
+    // If you use detectEyesUsingHaar, than you have to run adjustEyes2Face code below.
+    //// this->adjustEyes2Face(faceROI, leftEyeROI, rightEyeROI, leftEyeCenter, rightEyeCenter); // Use only with detectEyesUsingHaar()
 
     // 3. Translate to Gesture. 
     //// 1) Check eyes are opened.
@@ -315,10 +316,13 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
 
     //// 2) Translate to gesture.
     lastGestureData = this->getLastGestureData();
-    if(isLeftEyeOpen && isRightEyeOpen){
-        if(lastGestureData.getIsLeftEyeOpen() && lastGestureData.getIsLeftEyeOpen()){
-            // (1.1) 양안을 지속적으로 뜬 경우
-                // 제스처 버퍼에서 두 눈을 모두 뜨지 않은 경우를 찾을 때까지의 시간의 합
+    
+    EYE_STATE_TYPE CASE = selectCaseFromGesture(isLeftEyeOpen, isRightEyeOpen, lastGestureData.getIsLeftEyeOpen(), lastGestureData.getIsRightEyeOpen());
+
+    switch(CASE){
+
+        /* 1) 양안을 지속적으로 뜬 경우 */
+        case EYE_STATE_TYPE(BOTH_OPEN_TO_BOTH_OPEN):
             accumulatedTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
             for(std::vector<GestureData>::iterator it = this->getGestureDataBuffer().end()-1; it != this->getGestureDataBuffer().begin()-1; it--){
                 if(it->getIsLeftEyeOpen() && it->getIsRightEyeOpen()){
@@ -329,15 +333,19 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
             }
 
             if(accumulatedTime.count() <= 0){
-                // exception. 일단 써놓음
+                // exception.
                 result =  Gesture(NONE);
+
             }else if(this->getDoubleClickFlag()){
-                if(accumulatedTime.count() < 1){
-                    // 1초 미만이면서 더블클릭 플래그가 있으면 -> 더블 클릭 대기
+                // 누적시간이 1초 미만인가?
+                if(accumulatedTime.count() < 0.6){
+                    // 더블 클릭 대기
+                    this->resetFlags();
                     this->setDoubleClickFlag(true);
                     result = Gesture(WAIT);
                 }else{
-                    // 1초 이상이면서 더블클릭 플래그가 있으면 -> 더블 클릭 플래그 초기화
+                    // 0.6초 이상이면서 더블클릭 플래그가 있으면 -> 더블 클릭 플래그 초기화
+                    this->resetFlags();
                     this->setDoubleClickFlag(false);
                     result = Gesture(NONE);
                 }
@@ -346,21 +354,25 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                 //좌우 센터 간 y 픽셀 차이 검사 -> 스크롤 || 포인터 이동 
                 if(leftEyeCenter.y > rightEyeCenter.y && (leftEyeCenter.y - rightEyeCenter.y) > ET__MIN_SCROLL_MARGIN){
                     // 고개 좌측 기울임. 상향 스크롤
+                    this->resetFlags();
                     result = Gesture(SCROLL_UP);
                 }else if(leftEyeCenter.y < rightEyeCenter.y && (rightEyeCenter.y - leftEyeCenter.y) > ET__MIN_SCROLL_MARGIN){
                     // 고개 우측 기울임. 하향 스크롤
+                    this->resetFlags();
                     result = Gesture(SCROLL_DOWN);
                 }else{
                     // 포인터 이동
                     //// 🔧구현 예정
                 }
             }
-        }else if(lastGestureData.getIsLeftEyeOpen() || lastGestureData.getIsLeftEyeOpen()){
-            // (1.2) 지금은 양안을 떴지만 방금까지 한쪽 눈만 뜬 경우
-                // 제스처 버퍼에서 연속적으로 "동일한" 한쪽 눈만 뜬 경우들의 시간의 합
+
+            break;
+
+        /* 2) 지금은 양안을 떴지만 방금까지 한쪽 눈만 뜬 경우 */
+        case EYE_STATE_TYPE(SINGLE_OPEN_TO_BOTH_OPEN):
             accumulatedTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
             for(std::vector<GestureData>::iterator it = this->getGestureDataBuffer().end()-1; it != this->getGestureDataBuffer().begin()-1; it--){
-                if((lastGestureData.getIsLeftEyeOpen() == it->getIsLeftEyeOpen()) && (lastGestureData.getIsLeftEyeOpen() == it->getIsRightEyeOpen())){
+                if((lastGestureData.getIsLeftEyeOpen() == it->getIsLeftEyeOpen()) && (lastGestureData.getIsRightEyeOpen() == it->getIsRightEyeOpen())){
                     accumulatedTime += it->getFrameTime(); // sec
                 }else{ 
                     break;
@@ -368,26 +380,31 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
             }
             
             if(accumulatedTime.count() <= 0){
-                // exception. 일단 써놓음
+                // exception.
                 result =  Gesture(NONE);
             }else if(this->getRightClickFlag()){
+                std::cout << "RIGHT CLICK FLAG ON" << std::endl;
                 if(this->getDragFlag()){
                 // 우클릭 검사 플래그와 드래그 플래그가 있는 경우 -> 드롭 및 드래그/우클릭 플래그 초기화
                     result = Gesture(DROP);
+                    this->resetFlags();
                     this->setDragFlag(false);
                     this->setRightClickFlag(false);
                 }else{
                 // 우클릭 검사 플래그만 있는 경우 -> 우클릭 및 우클릭 플래그 초기화
                    result = Gesture(RIGHT_CLICK);
+                   this->resetFlags();
                     this->setRightClickFlag(false);
                 }
             }else{
                 // exception. 다 아니면 눈을 잘못 인식한 경우 등 예외
                 result = Gesture(NONE);
             }
-        }else{
-            // (1.3) 지금은 양안을 떳지만 방금까지 두 눈 모두 감은 경우
-                // 제스처 버퍼에서 연속적으로 두 눈 모두 감은 경우들의 시간의 합
+
+            break;
+
+        /* 3) 지금은 양안을 떳지만 방금까지 두 눈 모두 감은 경우 */
+        case EYE_STATE_TYPE(BOTH_CLOSE_TO_BOTH_OPEN):
             accumulatedTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
             for(std::vector<GestureData>::iterator it = this->getGestureDataBuffer().end()-1; it != this->getGestureDataBuffer().begin()-1; it--){
                 if(!it->getIsLeftEyeOpen() && !it->getIsRightEyeOpen()){
@@ -426,19 +443,20 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                 // 0.6초 미만 -> 그냥 눈 깜빡인 것이므로 무시
                 result = Gesture(NONE);
             }
-        }
-        
-    }else if(isLeftEyeOpen || isRightEyeOpen){
-        if(lastGestureData.getIsLeftEyeOpen() && lastGestureData.getIsLeftEyeOpen()){
-            // (2.1) 지금은 한 쪽 눈만 떳지만 방금까지 두눈을 뜬 경우
-                // 우클릭 검사 대기(1초 이상 요구이므로).
-                result = Gesture(WAIT);
-        }else if(lastGestureData.getIsLeftEyeOpen() || lastGestureData.getIsLeftEyeOpen()){
-            // (2.2) 지금도 한 쪽 눈만 떳고 방금도 한쪽눈만 뜬 경우 
-                // 연속적으로 "동일한" 쪽의 눈을 감은 경우의 누적시간을 구함.
+
+            break;
+
+        /* 4) 지금은 한 쪽 눈만 떴지만 방금까지 두 눈을 뜬 경우 */
+        case EYE_STATE_TYPE(BOTH_OPEN_TO_SINGLE_OPEN):
+            result = Gesture(WAIT);
+            
+            break;
+
+        /* 5) 지금도 한 쪽 눈만 떳고 방금도 한쪽눈만 뜬 경우  */
+        case EYE_STATE_TYPE(SINGLE_OPEN_TO_SINGLE_OPEN):
             accumulatedTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
             for(std::vector<GestureData>::iterator it = this->getGestureDataBuffer().end()-1; it != this->getGestureDataBuffer().begin()-1; it--){
-                if((lastGestureData.getIsLeftEyeOpen() == it->getIsLeftEyeOpen()) && (lastGestureData.getIsLeftEyeOpen() == it->getIsRightEyeOpen())){
+                if((lastGestureData.getIsLeftEyeOpen() == it->getIsLeftEyeOpen()) && (lastGestureData.getIsRightEyeOpen() == it->getIsRightEyeOpen())){
                     accumulatedTime += it->getFrameTime(); // sec
                 }else{ 
                     break;
@@ -457,6 +475,13 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                         result = Gesture(DRAG);
                     }else{
                         // 우클릭이지만 아직 드래그 플래그는 없는 경우
+                        // 아래의 주석된 코드 정상 작동 확인 완료
+                        
+                        // std::cout << "우클릭 시간 0.3초 이상이라 드래그 플래그 ture된 상태임" << std::endl;
+                        // result = Gesture(RIGHT_CLICK);
+                        // this->resetFlags();
+                        // this->setRightClickFlag(true);
+
                         if(isLeftEyeOpen && lastGestureData.getIsLeftEyeOpen()){
                             // 왼쪽 눈이 열린 경우
                             // 🔧 구현 필요: 왼쪽 눈의 직전 위치와 현재 위치 차이 계산
@@ -465,44 +490,54 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
                             // 오른쪽 눈이 열린 경우
                             // 🔧 구현 필요: 오른쪽 눈의 직전 위치와 현재 위치 차이 계산 후 저장 및 이동
                                 // 만약 위치 차이가 5픽셀 이상이면 -> this->setDragFlag(true); result = Gesture(DRAG); 위치 차이만큼 초점 이동
+                        }else{
                         }
                     }
                  }else{
                     // 우클릭 플래그 없는 경우
                     if(accumulatedTime.count() < 0.3){
                         // 누적 시간 1초 미만 -> 단순 대기
+                        std::cout << "연속적으로 한눈만 감고 있음!!" << std::endl;
                         result = Gesture(WAIT);
                     }else{
                         // 누적 시간 1초 이상 -> 우클릭 플래그 및 대기(눈 뜰 때 적용이므로)
                         // 우클릭 검사 플래그가 없으면 1초 미만 -> 우클릭 대기 중 || 1초 이상 -> 우클릭만 누르고 드래그는 안한 경우 
                         // ⭐️ 이 부분 3초 미만 유지 내용 수정함. 논문에 표 1에 strike 그려놓음
+                        std::cout << "우클릭 준비 완료!!! 눈 떼면 우클릭 플래그 true인 상태" << std::endl;
                         result = Gesture(WAIT);
+                        this->resetFlags();
                         this->setRightClickFlag(true);
                     }
                  }
             }
-        }else{
-            // (2.3) 지금은 한쪽 눈만 떳지만 방금까지는 두눈을 감은 경우
-            // 사용 안함 예외. (예외임.. 그냥 안쓰는 경우라고 가정할까함!)
+
+            break;
+
+        /* 6) 지금은 한쪽 눈만 떴지만 방금까지는 두 눈을 감은 경우*/
+        case EYE_STATE_TYPE(BOTH_CLOSE_TO_SINGLE_OPEN):
             result = Gesture(NONE);
-        }
-    }else{
-        if(lastGestureData.getIsLeftEyeOpen() && lastGestureData.getIsLeftEyeOpen()){
-            // (3.1) 지금은 두 눈 다 감았지만 방금까지는 두 눈 모두 뜬 경우
-                // (⭐️작성중!! 여기부터 하셈) 좌클릭 검사 시작 플래그 ON. 또는 더블클릭인지도 확인?
-                // 사용 안해도 될 듯?
+
+            break;
+
+        /* 7) 지금은 두 눈 다 감았지만 방금까지는 두 눈 모두 뜬 경우 */
+        case EYE_STATE_TYPE(BOTH_OPEN_TO_BOTH_CLOSE):
             result = Gesture(NONE);
-        }else if(lastGestureData.getIsLeftEyeOpen() || lastGestureData.getIsLeftEyeOpen()){
-            // (3.2) 지금은 두 눈 다 감았지만 방금까지는 한 쪽 눈만 감은 경우
-            // 사용 안함 예외
+
+            break;
+
+        /* 8) 지금은 두 눈 다 감았지만 방금까지는 한 쪽 눈만 감은 경우 */
+        case EYE_STATE_TYPE(SINGLE_OPEN_TO_BOTH_CLOSE):
             result = Gesture(NONE);
-        }else{
-            // (3.3) 지금은 두 눈 다 감았지만 방금까지도 두눈 모두 감은
-                // 제스처 버퍼에서 연속적으로 두눈 모두 감은 경우의 누적시간 합을 구함
-                // 3초 이상이면 인터페이스 플래그 토글 후 버퍼 등 초기화하고 다시 뜰때까지 계속 감고있는거 예외처리
-                // 이것도 사용 안해도 될 듯?
+
+            break;
+        /* 9) 지금도 두 눈 다 감았고 방금까지도 두 눈 모두 감은 경우 */
+        case EYE_STATE_TYPE(BOTH_CLOSE_TO_BOTH_CLOSE):
             result = Gesture(NONE);
-        }
+
+            break;
+
+        default:
+            break;
     }
 
     // End Point Of Duration(sec).
@@ -539,3 +574,30 @@ Gesture EyeTracker::traceAndTranslate2Gesture(cv::Mat& cameraFrame){
     // 직전 눈의 focusPoint 정보 그대로 사용
 
 // focusPoint = this->getLastGesture().getCursor();
+EYE_STATE_TYPE EyeTracker::selectCaseFromGesture(bool isLeftEyeOpen, bool isRightEyeOpen, bool isLastLeftEyeOpen, bool isLastRightEyeOpen){
+    if(isLeftEyeOpen && isRightEyeOpen){
+        if(isLastLeftEyeOpen && isLastRightEyeOpen){
+            return EYE_STATE_TYPE(BOTH_OPEN_TO_BOTH_OPEN);
+        }else if(isLastLeftEyeOpen || isLastRightEyeOpen){
+            return EYE_STATE_TYPE(SINGLE_OPEN_TO_BOTH_OPEN);
+        }else{
+            return EYE_STATE_TYPE(BOTH_CLOSE_TO_BOTH_OPEN);
+        }
+    }else if(isLeftEyeOpen || isRightEyeOpen){
+        if(isLastLeftEyeOpen && isLastRightEyeOpen){
+            return EYE_STATE_TYPE(BOTH_OPEN_TO_SINGLE_OPEN);
+        }else if(isLastLeftEyeOpen || isLastRightEyeOpen){
+            return EYE_STATE_TYPE(SINGLE_OPEN_TO_SINGLE_OPEN);
+        }else{
+            return EYE_STATE_TYPE(BOTH_CLOSE_TO_SINGLE_OPEN);
+        }
+    }else{
+        if(isLastLeftEyeOpen && isLastRightEyeOpen){
+            return EYE_STATE_TYPE(BOTH_OPEN_TO_BOTH_CLOSE);
+        }else if(isLastLeftEyeOpen || isLastRightEyeOpen){
+            return EYE_STATE_TYPE(SINGLE_OPEN_TO_BOTH_CLOSE);
+        }else{
+            return EYE_STATE_TYPE(BOTH_CLOSE_TO_BOTH_CLOSE);
+        }
+    }
+}

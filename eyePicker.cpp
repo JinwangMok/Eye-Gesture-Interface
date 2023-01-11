@@ -85,20 +85,14 @@ void EyePicker::selectEyeArea(cv::Mat frame_gray, cv::Rect face, detectionData &
 
 	nump++;
 
-	// checkCherryPicker(resultLeftPupil, resultRightPupil, outputData);
-
 	gray = debugFace.clone();
 }
 
 cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow, int &num, detectionData &outputData)
 {
-	// lectureCondition = true;
 	cv::Mat eyeROIUnscaled = face(eye);
 	cv::Mat eyeROI;
 	scaleToFastSize(eyeROIUnscaled, eyeROI);
-
-	// draw eye region
-	// rectangle(face, eye, 1234);
 
 	//-- Find the gradient
 	cv::Mat gradientX = computeMatXGradient(eyeROI);
@@ -117,7 +111,7 @@ cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 
 	cv::GaussianBlur(eyeROI, weight, cv::Size(EP__K_WEIGHT_BLUR_SIZE, EP__K_WEIGHT_BLUR_SIZE), 0, 0);
 
-    // // 반전
+    // 반전
 	double maxw;
 	for (int y = 0; y < weight.rows; ++y) {
 		unsigned char *row = weight.ptr<unsigned char>(y);
@@ -596,7 +590,7 @@ cv::Point EyePicker::detectEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 				}else{
 					outputData.eyeState = EP__EYE_STATE_RIGHT_CLOSED;
 				}
-				std::cout << "윙크~" << std::endl;
+				// std::cout << "윙크~" << std::endl;
 			}else{
 				outputData.eyeState = EP__EYE_STATE_CLOSE;
 			}

@@ -32,34 +32,34 @@ int main(int argc, char** argv){
         result = eyeTracker.traceAndTranslate2Gesture(cameraFrame);
         if(result != Gesture(NONE) && result != Gesture(WAIT)){
             switch(result){
-                case 2:
+                case Gesture(INTERFACE_ENABLE):
                     command = "Interface enabled.";
                     break;
-                case 3:
+                case Gesture(INTERFACE_DISABLE):
                     command = "Interface disabled.";
                     break;
-                case 4:
+                case Gesture(LEFT_CLICK):
                     command = "Left click";
                     break;
-                case 5:
+                case Gesture(RIGHT_CLICK):
                     command = "Right click";
                     break;
-                case 6:
+                case Gesture(DOUBLE_CLICK):
                     command = "Double click";
                     break;
-                case 7:
+                case Gesture(POINTER_MOVE):
                     command = "Pointer move";
                     break;
-                case 8:
+                case Gesture(DRAG):
                     command = "Drag";
                     break;
-                case 9:
+                case Gesture(DROP):
                     command = "Drop";
                     break;
-                case 10:
+                case Gesture(SCROLL_UP):
                     command = "Scroll up";
                     break;
-                case 11:
+                case Gesture(SCROLL_DOWN):
                     command = "Scroll down";
                     break;
                 default:

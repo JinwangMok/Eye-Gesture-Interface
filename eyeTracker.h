@@ -30,10 +30,23 @@
 #define ET__CASCADE_EYE_MIN_NEIGHBORS   15
 #define ET__MAX_BUFFER_LENGTH           100 // Aim to store data for 3sec.(approximately 30frame * 3 = 90 + 10(margin))
 #define ET__MAX_ERROR_COUNT             30  // Aim to handle error with 1sec margin.(approximately 1sec = 30frame)
-#define ET__MIN_SCROLL_MARGIN           30
+#define ET__MIN_SCROLL_MARGIN           20
+
 
 /* Types */
 //TODO: 안구 검출 부분 엔진 교체 필요(현재는 실험용으로 cascadeClassifier 사용)
+enum EYE_STATE_TYPE{
+    BOTH_OPEN_TO_BOTH_OPEN,
+    SINGLE_OPEN_TO_BOTH_OPEN,
+    BOTH_CLOSE_TO_BOTH_OPEN,
+    BOTH_OPEN_TO_SINGLE_OPEN,
+    SINGLE_OPEN_TO_SINGLE_OPEN,
+    BOTH_CLOSE_TO_SINGLE_OPEN,
+    BOTH_OPEN_TO_BOTH_CLOSE,
+    SINGLE_OPEN_TO_BOTH_CLOSE,
+    BOTH_CLOSE_TO_BOTH_CLOSE
+};
+
 enum Gesture{
     NONE,
     WAIT,
@@ -154,6 +167,8 @@ class EyeTracker : public EyePicker{
         void detectEyesUsingEyePicker(cv::Mat& cameraFrame);
         void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter);
         Gesture traceAndTranslate2Gesture(cv::Mat& cameraFrame);
+        EYE_STATE_TYPE selectCaseFromGesture(bool isLeftEyeOpen, bool isRightEyeOpen, bool isLastLeftEyeOpen, bool isLastRightEyeOpen);
+        void resetFlags(){ this->setDoubleClickFlag(false); this->setDragFlag(false); this->setRightClickFlag(false); }
 };
 /* Global Variables */
 
