@@ -14,17 +14,13 @@
 
 /* Includes */
 #include "eyeTracker.h"
-#ifndef __INCLUDE_PAINTER__
-#define __INCLUDE_PAINTER__
-#include "painter.h"
-#endif
 #ifndef __GESTURE_DATA_H__
 #define __GESTURE_DATA_H__
 #include "_gesture.h"
 #endif
 
 /* Constants */
-#define CAM_NUM     2 //Usually this is 0. In my case is 2.
+#define CAM_NUM     1 //Usually this is 0. In my case is 1.
 #define KEY_ESC     27
 #define INIT_SEC    2
 #define CASCADE_FACE_PATH "./haarcascade_frontalface_alt2.xml"
@@ -32,14 +28,8 @@
 
 /* Types */
 
-/* Global Variables */
-cv::Point CURSOR;
-cv::Size DISPLAY_SIZE;
-cv::Mat MAIN_WINDOW;
-EyeTracker eyeTracker;
-
 /* Functions */
-void initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, cv::Mat& mainWindow, const uint16_t FPS);
-void adjustEyes2Face(cv::Rect& faceROI, cv::Rect& leftEyeROI, cv::Rect& rightEyeROI, cv::Point& leftEyeCenter, cv::Point& rightEyeCenter);
-
+void initialSetUp(cv::VideoCapture& cap, cv::Mat& frame, const uint16_t FPS);
+void paintMainWindow();
+void showCameraFrame();
 #endif

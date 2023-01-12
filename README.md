@@ -1,5 +1,6 @@
 # Eye-Gesture-Interface
 Author: Jinwang Mok
+> 🗣️ Code in this code is quite mess and dirty..😅
 ## Environment
 >- ***OS*** : `MacOS Ventura 13.1`
 >
@@ -32,7 +33,7 @@ Author: Jinwang Mok
 > Compile the project. (using g++)
 > 
 > ```shell
-> g++ main.cpp eyeTracker.cpp eyePicker.cpp gestureData.cpp painter.cpp -o main `pkg-config --libs --cflags opencv4` -std=c++11
+> g++ main.cpp eyeTracker.cpp eyePicker.cpp gestureData.cpp -o main `pkg-config --libs --cflags opencv4` -std=c++11
 > ```
 
 3. Execute the binary.

@@ -24,6 +24,8 @@
 #endif
 /* Constants */
 
+#define MAIN_WINDOW_WIDTH   500
+#define MAIN_WINDOW_HEIGHT  500
 // > Display Resolution
 //TODO: Required revise to getting the display resolution.
 #ifdef _WIN32
@@ -46,11 +48,16 @@
 #define ET__CASCADE_EYE_MIN_NEIGHBORS   15
 #define ET__MAX_BUFFER_LENGTH           100 // Aim to store data for 3sec.(approximately 30frame * 3 = 90 + 10(margin))
 #define ET__MAX_ERROR_COUNT             30  // Aim to handle error with 1sec margin.(approximately 1sec = 30frame)
-#define ET__MIN_SCROLL_MARGIN           20
+#define ET__MIN_SCROLL_MARGIN           15
 #define ET__BUFFER_ERROR_MARGIN_COUNT   4
-#define ET__MIN_POINTER_MOVE_MARGIN     5
-#define ET__POINTER_X_MOVE_RATIO        3
-#define ET__POINTER_Y_MOVE_RATIO        7.5
+
+#define ET__LEFT_CLICK_THRESHOLD        0.6
+#define ET__DOUBLE_CLICK_WAIT_THRESHOLD 0.6
+#define ET__RIGHT_CLICK_THRESHOLD       0.6
+#define ET__INTERFACE_THRESHOLD         3
+#define ET__MIN_POINTER_MOVE_THRESHOLD  10
+#define ET__POINTER_X_MOVE_RATIO        2
+#define ET__POINTER_Y_MOVE_RATIO        5
 
 /* Types */
 //TODO: 안구 검출 부분 엔진 교체 필요(현재는 실험용으로 cascadeClassifier 사용)
@@ -112,6 +119,9 @@ class EyeTracker : public EyePicker{
         bool dragFlag;
         bool interfaceEnableFlag;
 
+        std::chrono::duration<double> accumlatedDuration4Enable;
+        bool isLastDisableEyeClosed;
+
     protected:
         void setLastFaceROI(cv::Rect faceROI){ this->lastFaceROI = faceROI; }
         void setLastLeftEyeROI(cv::Rect leftEyeROI){ this->lastLeftEyeROI = leftEyeROI; }
@@ -154,6 +164,8 @@ class EyeTracker : public EyePicker{
 
         void setInterfaceEnableFlag(bool flag){ this->interfaceEnableFlag = flag; }
 
+        void setAccumlatedDuration4Enable(std::chrono::duration<double> _duration){ this->accumlatedDuration4Enable = _duration; }
+        void setIsLastDisableEyeClosed(bool flag){ this->isLastDisableEyeClosed = flag; }
     public:
         cv::Rect getLastFaceROI(){ return this->lastFaceROI; }
         cv::Rect getLastLeftEyeROI(){ return this->lastLeftEyeROI; }
@@ -181,6 +193,9 @@ class EyeTracker : public EyePicker{
         void attachCursor(cv::Point* pCursor){ this->CURSOR_POINTER = pCursor; std::cout << "Initial CURSOR Point : " << *pCursor << std::endl; }
         void resetFlags(){ this->setDoubleClickFlag(false); this->setDragFlag(false); this->setRightClickFlag(false); }
 
+        std::chrono::duration<double> getAccumlatedDuration4Enable(){ return this->accumlatedDuration4Enable; }
+        bool getIsLastDisableEyeClosed(){ return this->isLastDisableEyeClosed; }
+
     public:
         EyeTracker(){}
         EyeTracker(cv::String casecadeFacePath, cv::String casecadeEyePath){
@@ -199,6 +214,8 @@ class EyeTracker : public EyePicker{
             this->rightClickFlag = false;
             this->dragFlag = false;
             this->interfaceEnableFlag = false;
+            this->isLastDisableEyeClosed = false;
+            this->accumlatedDuration4Enable = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::nanoseconds(0));
         }
         void detectFace(cv::Mat& cameraFrame);
         void detectEyesUsingHaar(cv::Mat& cameraFrame);
